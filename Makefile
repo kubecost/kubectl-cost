@@ -1,7 +1,4 @@
 .PHONY: build
-build: cmd/kubectl-cost
-
-.PHONY: build
 build:
 	cd cmd && go build -o kubectl-cost
 
