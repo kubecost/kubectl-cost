@@ -10,12 +10,9 @@ import (
 )
 
 type CostOptionsDeployment struct {
-	isRate      bool
-	showCPU     bool
-	showMemory  bool
-	showGPU     bool
-	showPV      bool
-	showNetwork bool
+	isRate bool
+
+	displayOptions
 }
 
 func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
@@ -39,25 +36,18 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.Flags().StringVar(&commonO.costWindow, "window", "yesterday", "the window of data to query")
 	cmd.Flags().BoolVar(&deploymentO.isRate, "rate", false, "show the projected monthly rate based on data in the window instead of the total cost during the window")
-	cmd.Flags().BoolVar(&deploymentO.showCPU, "show-cpu", false, "show data for CPU cost")
-	cmd.Flags().BoolVar(&deploymentO.showMemory, "show-memory", false, "show data for memory cost")
-	cmd.Flags().BoolVar(&deploymentO.showGPU, "show-gpu", false, "show data for GPU cost")
-	cmd.Flags().BoolVar(&deploymentO.showPV, "show-pv", false, "show data for PV (physical volume) cost")
-	cmd.Flags().BoolVar(&deploymentO.showNetwork, "show-network", false, "show data for network cost")
+	cmd.Flags().BoolVar(&deploymentO.showCPUCost, "show-cpu", false, "show data for CPU cost")
+	cmd.Flags().BoolVar(&deploymentO.showMemoryCost, "show-memory", false, "show data for memory cost")
+	cmd.Flags().BoolVar(&deploymentO.showGPUCost, "show-gpu", false, "show data for GPU cost")
+	cmd.Flags().BoolVar(&deploymentO.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
+	cmd.Flags().BoolVar(&deploymentO.showNetworkCost, "show-network", false, "show data for network cost")
+	cmd.Flags().BoolVar(&deploymentO.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. No effect with --rate.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
 }
 
 func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
-
-	do := displayOptions{
-		showCPUCost:     no.showCPU,
-		showMemoryCost:  no.showMemory,
-		showGPUCost:     no.showGPU,
-		showPVCost:      no.showPV,
-		showNetworkCost: no.showNetwork,
-	}
 
 	clientset, err := kubernetes.NewForConfig(co.restConfig)
 	if err != nil {
@@ -75,13 +65,13 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 			aggCMResp.Data,
 			[]string{"namespace", "deployment"},
 			deploymentTitleExtractor,
-			do,
+			no.displayOptions,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
 	} else {
-		return fmt.Errorf("kubectl cost does not yet support non-rate queries by deployment")
+		return fmt.Errorf("kubectl cost deployment does not yet support non-rate queries")
 	}
 
 	return nil

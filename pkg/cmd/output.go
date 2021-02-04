@@ -11,6 +11,16 @@ import (
 	"github.com/kubecost/cost-model/pkg/kubecost"
 )
 
+const (
+	CPUCol              = "CPU"
+	CPUEfficiencyCol    = "CPU Eff."
+	MemoryCol           = "Memory"
+	MemoryEfficiencyCol = "Memory Eff."
+	GPUCol              = "GPU"
+	PVCol               = "PV"
+	NetworkCol          = "Network"
+)
+
 func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
@@ -32,31 +42,41 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 
 	if opts.showCPUCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "CPU",
+			Name: CPUCol,
 		})
+		if opts.showEfficiency {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name: CPUEfficiencyCol,
+			})
+		}
 	}
 
 	if opts.showMemoryCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "Memory",
+			Name: MemoryCol,
 		})
+		if opts.showEfficiency {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name: MemoryEfficiencyCol,
+			})
+		}
 	}
 
 	if opts.showGPUCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "GPU",
+			Name: GPUCol,
 		})
 	}
 
 	if opts.showPVCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "PV",
+			Name: PVCol,
 		})
 	}
 
 	if opts.showNetworkCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "Network",
+			Name: NetworkCol,
 		})
 	}
 
@@ -74,23 +94,29 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 	headerRow = append(headerRow, "Namespace")
 
 	if opts.showCPUCost {
-		headerRow = append(headerRow, "CPU")
+		headerRow = append(headerRow, CPUCol)
+		if opts.showEfficiency {
+			headerRow = append(headerRow, CPUEfficiencyCol)
+		}
 	}
 
 	if opts.showMemoryCost {
-		headerRow = append(headerRow, "Memory")
+		headerRow = append(headerRow, MemoryCol)
+		if opts.showEfficiency {
+			headerRow = append(headerRow, MemoryEfficiencyCol)
+		}
 	}
 
 	if opts.showGPUCost {
-		headerRow = append(headerRow, "GPU")
+		headerRow = append(headerRow, GPUCol)
 	}
 
 	if opts.showPVCost {
-		headerRow = append(headerRow, "PV")
+		headerRow = append(headerRow, PVCol)
 	}
 
 	if opts.showNetworkCost {
-		headerRow = append(headerRow, "Network")
+		headerRow = append(headerRow, NetworkCol)
 	}
 
 	headerRow = append(headerRow, "Total Cost (All)")
@@ -122,11 +148,17 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 		if opts.showCPUCost {
 			allocRow = append(allocRow, formatFloat(alloc.CPUCost))
 			summedCPU += alloc.CPUCost
+			if opts.showEfficiency {
+				allocRow = append(allocRow, formatFloat(alloc.CPUEfficiency))
+			}
 		}
 
 		if opts.showMemoryCost {
 			allocRow = append(allocRow, formatFloat(alloc.RAMCost))
 			summedMemory += alloc.RAMCost
+			if opts.showEfficiency {
+				allocRow = append(allocRow, formatFloat(alloc.RAMEfficiency))
+			}
 		}
 
 		if opts.showGPUCost {
@@ -158,10 +190,16 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 
 	if opts.showCPUCost {
 		footerRow = append(footerRow, formatFloat(summedCPU))
+		if opts.showEfficiency {
+			footerRow = append(footerRow, "")
+		}
 	}
 
 	if opts.showMemoryCost {
 		footerRow = append(footerRow, formatFloat(summedMemory))
+		if opts.showEfficiency {
+			footerRow = append(footerRow, "")
+		}
 	}
 
 	if opts.showGPUCost {
@@ -190,6 +228,7 @@ type displayOptions struct {
 	showGPUCost     bool
 	showPVCost      bool
 	showNetworkCost bool
+	showEfficiency  bool
 }
 
 func deploymentTitleExtractor(aggregationName string) ([]string, error) {
@@ -223,31 +262,31 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]aggregation, rowTi
 
 	if opts.showCPUCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "CPU",
+			Name: CPUCol,
 		})
 	}
 
 	if opts.showMemoryCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "Memory",
+			Name: MemoryCol,
 		})
 	}
 
 	if opts.showGPUCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "GPU",
+			Name: GPUCol,
 		})
 	}
 
 	if opts.showPVCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "PV",
+			Name: PVCol,
 		})
 	}
 
 	if opts.showNetworkCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: "Network",
+			Name: NetworkCol,
 		})
 	}
 
@@ -282,23 +321,23 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]aggregation, rowTi
 	}
 
 	if opts.showCPUCost {
-		headerRow = append(headerRow, "CPU")
+		headerRow = append(headerRow, CPUCol)
 	}
 
 	if opts.showMemoryCost {
-		headerRow = append(headerRow, "Memory")
+		headerRow = append(headerRow, MemoryCol)
 	}
 
 	if opts.showGPUCost {
-		headerRow = append(headerRow, "GPU")
+		headerRow = append(headerRow, GPUCol)
 	}
 
 	if opts.showPVCost {
-		headerRow = append(headerRow, "PV")
+		headerRow = append(headerRow, PVCol)
 	}
 
 	if opts.showNetworkCost {
-		headerRow = append(headerRow, "Network")
+		headerRow = append(headerRow, NetworkCol)
 	}
 
 	headerRow = append(headerRow, "Monthly Rate (All)")

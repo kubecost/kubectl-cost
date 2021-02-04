@@ -10,12 +10,9 @@ import (
 )
 
 type CostOptionsNamespace struct {
-	isRate      bool
-	showCPU     bool
-	showMemory  bool
-	showGPU     bool
-	showPV      bool
-	showNetwork bool
+	isRate bool
+
+	displayOptions
 }
 
 func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
@@ -39,25 +36,18 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.Flags().StringVar(&commonO.costWindow, "window", "yesterday", "the window of data to query")
 	cmd.Flags().BoolVar(&namespaceO.isRate, "rate", false, "show the projected monthly rate based on data in the window instead of the total cost during the window")
-	cmd.Flags().BoolVar(&namespaceO.showCPU, "show-cpu", false, "show data for CPU cost")
-	cmd.Flags().BoolVar(&namespaceO.showMemory, "show-memory", false, "show data for memory cost")
-	cmd.Flags().BoolVar(&namespaceO.showGPU, "show-gpu", false, "show data for GPU cost")
-	cmd.Flags().BoolVar(&namespaceO.showPV, "show-pv", false, "show data for PV (physical volume) cost")
-	cmd.Flags().BoolVar(&namespaceO.showNetwork, "show-network", false, "show data for network cost")
+	cmd.Flags().BoolVar(&namespaceO.showCPUCost, "show-cpu", false, "show data for CPU cost")
+	cmd.Flags().BoolVar(&namespaceO.showMemoryCost, "show-memory", false, "show data for memory cost")
+	cmd.Flags().BoolVar(&namespaceO.showGPUCost, "show-gpu", false, "show data for GPU cost")
+	cmd.Flags().BoolVar(&namespaceO.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
+	cmd.Flags().BoolVar(&namespaceO.showNetworkCost, "show-network", false, "show data for network cost")
+	cmd.Flags().BoolVar(&namespaceO.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. No effect with --rate.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
 }
 
 func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
-
-	do := displayOptions{
-		showCPUCost:     no.showCPU,
-		showMemoryCost:  no.showMemory,
-		showGPUCost:     no.showGPU,
-		showPVCost:      no.showPV,
-		showNetworkCost: no.showNetwork,
-	}
 
 	clientset, err := kubernetes.NewForConfig(co.restConfig)
 	if err != nil {
@@ -75,7 +65,7 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 			aggCMResp.Data,
 			[]string{"namespace"},
 			noopTitleExtractor,
-			do,
+			no.displayOptions,
 		)
 		if err != nil {
 			return fmt.Errorf("failed to write table output: %s", err)
@@ -87,7 +77,7 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 		}
 
 		// Use Data[0] because the query accumulates
-		err = writeNamespaceTable(co.Out, allocR.Data[0], do)
+		err = writeNamespaceTable(co.Out, allocR.Data[0], no.displayOptions)
 		if err != nil {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
