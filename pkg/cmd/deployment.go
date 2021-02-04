@@ -70,7 +70,13 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
-		err = writeAggregationRateTable(co.Out, aggCMResp.Data, "deployment", do)
+		err = writeAggregationRateTable(
+			co.Out,
+			aggCMResp.Data,
+			[]string{"namespace", "deployment"},
+			deploymentTitleExtractor,
+			do,
+		)
 		if err != nil {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
