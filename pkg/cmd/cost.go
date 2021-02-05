@@ -20,14 +20,14 @@ import (
 
 var (
 	costExample = `
-	# view the general cost breakdown
-	%[1]s cost
+    # Show the projected monthly rate for each namespace based on the last 5 days of activity.
+    %[1]s cost namespace --window 5d
 
-	# view the general cost breakdown for the last 4 days
-	%[1]s cost --window 4d
+    # Show how much each namespace cost over the past 5 days with additional CPU and memory cost and efficiency breakdown.
+    %[1]s cost namespace --historical --window 5d --show-cpu --show-memory --show-efficiency
 
-	# view the general cost breakdown for the last 4 days for the kubecost namespace
-	%[1]s cost --window 4d --cost-namespace kubecost
+    # Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
+    %[1]s cost deployment --window month --show-cpu --show-memory --show-gpu --show-pv --show-network
 `
 
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
@@ -64,8 +64,8 @@ func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
 	o := NewCommonCostOptions(streams)
 
 	cmd := &cobra.Command{
-		Use:          "cost [flags]",
-		Short:        "View cluster cost information",
+		Use:          "cost",
+		Short:        "View cluster cost information.",
 		Example:      fmt.Sprintf(costExample, "kubectl"),
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
@@ -78,8 +78,9 @@ func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
 			// if err := o.Run(); err != nil {
 			// 	return err
 			// }
+			return fmt.Errorf("please use a subcommand")
 
-			return nil
+			// return nil
 		},
 	}
 

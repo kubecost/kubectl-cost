@@ -27,19 +27,19 @@ There are two supported subcommands: `namespace` and `deployment`, which display
 
 
 #### Examples
-Show how much each namespace cost over the past 5 days with additional CPU and memory cost and efficiency breakdown.
-``` sh
-kubectl cost namespace --window 5d --show-cpu --show-memory --show-efficiency
-```
-
 Show the projected monthly rate for each namespace based on the last 5 days of activity.
 ``` sh
-kubectl cost namespace --rate --window 5d
+kubectl cost namespace --window 5d
+```
+
+Show how much each namespace cost over the past 5 days with additional CPU and memory cost and efficiency breakdown.
+``` sh
+kubectl cost namespace --historical --window 5d --show-cpu --show-memory --show-efficiency
 ```
 
 Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
 ``` sh
-kubectl cost deployment --rate --window month --show-cpu --show-memory --show-gpu --show-pv --show-network
+kubectl cost deployment --window month --show-cpu --show-memory --show-gpu --show-pv --show-network
 ```
 
 
@@ -49,14 +49,14 @@ See `kubectl cost [subcommand] --help` for the full set of flags.
 
 The following flags modify the behavior of the subcommands:
 ```
---rate                           show the projected monthly rate based on data in the window instead of the total cost during the window
---show-cpu                       show data for CPU cost
---show-efficiency                Show efficiency of cost alongside CPU and memory cost. No effect with --rate.
---show-gpu                       show data for GPU cost
---show-memory                    show data for memory cost
---show-network                   show data for network cost
---show-pv                        show data for PV (physical volume) cost
---window string                  the window of data to query (default "yesterday")
+--historical        show the total cost during the window instead of the projected monthly rate based on the data in the window"
+--show-cpu          show data for CPU cost
+--show-efficiency   show efficiency of cost alongside CPU and memory cost. No effect with --rate.
+--show-gpu          show data for GPU cost
+--show-memory       show data for memory cost
+--show-network      show data for network cost
+--show-pv           show data for PV (physical volume) cost
+--window string     the window of data to query (default "yesterday")
 ```
 
 

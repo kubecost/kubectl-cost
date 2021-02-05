@@ -10,7 +10,7 @@ import (
 )
 
 type CostOptionsDeployment struct {
-	isRate bool
+	isHistorical bool
 
 	displayOptions
 }
@@ -35,13 +35,13 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	cmd.Flags().StringVar(&commonO.costWindow, "window", "yesterday", "the window of data to query")
-	cmd.Flags().BoolVar(&deploymentO.isRate, "rate", false, "show the projected monthly rate based on data in the window instead of the total cost during the window")
+	cmd.Flags().BoolVar(&deploymentO.isHistorical, "historical", false, "show the total cost during the window instead of the projected monthly rate based on the data in the window")
 	cmd.Flags().BoolVar(&deploymentO.showCPUCost, "show-cpu", false, "show data for CPU cost")
 	cmd.Flags().BoolVar(&deploymentO.showMemoryCost, "show-memory", false, "show data for memory cost")
 	cmd.Flags().BoolVar(&deploymentO.showGPUCost, "show-gpu", false, "show data for GPU cost")
 	cmd.Flags().BoolVar(&deploymentO.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
 	cmd.Flags().BoolVar(&deploymentO.showNetworkCost, "show-network", false, "show data for network cost")
-	cmd.Flags().BoolVar(&deploymentO.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. No effect with --rate.")
+	cmd.Flags().BoolVar(&deploymentO.showEfficiency, "show-efficiency", false, "show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
@@ -54,11 +54,14 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 		return fmt.Errorf("failed to create clientset: %s", err)
 	}
 
-	if no.isRate {
+	if !no.isHistorical {
 		aggCMResp, err := queryAggCostModel(clientset, co.costWindow, "deployment")
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
+
+		// don't show unallocated deployment data
+		delete(aggCMResp.Data, "__unallocated__")
 
 		err = writeAggregationRateTable(
 			co.Out,
@@ -71,7 +74,8 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
 	} else {
-		return fmt.Errorf("kubectl cost deployment does not yet support non-rate queries")
+		// Not supported because the allocation API does not return deployment names.
+		return fmt.Errorf("kubectl cost deployment does not yet support historical queries")
 	}
 
 	return nil
