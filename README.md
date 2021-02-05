@@ -1,6 +1,6 @@
 # kubectl-cost
 
-`kubectl-cost` is a [kubectl plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/) that provides easy CLI access to some of the [kubecost APIs](https://github.com/kubecost/docs/blob/master/apis.md).
+`kubectl-cost` is a [kubectl plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/) that provides easy CLI access to Kubernetes cost allocation metrics via the [kubecost APIs](https://github.com/kubecost/docs/blob/master/apis.md).
 
 ## Installation
 
