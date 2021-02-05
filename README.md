@@ -23,7 +23,7 @@ As long as the binary is still named `kubectl-cost` and is somewhere in your `PA
 
 ## Usage
 
-There are two supported subcommands: `namespace` and `deployment`, which display cost information aggregated by namespace and deployment respectively. Each subcommand has two primary modes, rate and non-rate. Rate displays the projected monthly cost based on the activity during the window. Non-rate (the default) displays the total cost for the duration of the window.
+There are two supported subcommands: `namespace` and `deployment`, which display cost information aggregated by namespace and deployment respectively. Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
 
 
 #### Examples
