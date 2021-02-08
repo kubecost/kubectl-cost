@@ -41,7 +41,9 @@ func queryAggCostModel(clientset *kubernetes.Clientset, window, aggregate string
 	return ar, nil
 }
 
-// hardcoding because of dependency problems with azure autorest
+// Hardcoded instead of imported because of dependency problems introduced when
+// github.com/kubecost/cost-model/pkg/costmodel is imported. The breakage involves
+// Azure's go-autorest, the azure-sdk-for-go, and k8s client-go.
 type aggregation struct {
 	Aggregator                 string               `json:"aggregation"`
 	Subfields                  []string             `json:"subfields,omitempty"`

@@ -5,12 +5,14 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/klog"
 
 	"github.com/spf13/cobra"
 )
 
 type CostOptionsDeployment struct {
-	isHistorical bool
+	isHistorical    bool
+	filterNamespace string
 
 	displayOptions
 }
@@ -42,6 +44,7 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.Flags().BoolVar(&deploymentO.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
 	cmd.Flags().BoolVar(&deploymentO.showNetworkCost, "show-network", false, "show data for network cost")
 	cmd.Flags().BoolVar(&deploymentO.showEfficiency, "show-efficiency", false, "show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
+	cmd.Flags().StringVarP(&deploymentO.filterNamespace, "namespace-filter", "N", "", "Limit results to only one namespace. Defaults to all namespaces.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
@@ -63,6 +66,8 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 		// don't show unallocated deployment data
 		delete(aggCMResp.Data, "__unallocated__")
 
+		applyNamespaceFilter(aggCMResp.Data, no.filterNamespace)
+
 		err = writeAggregationRateTable(
 			co.Out,
 			aggCMResp.Data,
@@ -79,4 +84,27 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 	}
 
 	return nil
+}
+
+// Applies the filter in place by deleting all entries from aggData that are not in
+// the namespace, unless it is an empty string in which case nothing is done.
+func applyNamespaceFilter(aggData map[string]aggregation, namespaceFilter string) {
+	if namespaceFilter == "" {
+		return
+	}
+
+	for aggName, _ := range aggData {
+		sp, err := deploymentTitleExtractor(aggName)
+		if err != nil {
+			klog.Warningf("failed to extract namespace info from aggregation title %s, skipping", aggName)
+			continue
+		}
+		namespace := sp[0]
+
+		if namespace != namespaceFilter {
+			delete(aggData, aggName)
+		}
+	}
+
+	return
 }
