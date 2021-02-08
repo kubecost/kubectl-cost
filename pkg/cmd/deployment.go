@@ -12,6 +12,7 @@ import (
 
 type CostOptionsDeployment struct {
 	isHistorical    bool
+	showAll         bool
 	filterNamespace string
 
 	displayOptions
@@ -32,6 +33,8 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
+			deploymentO.Complete()
+
 			return runCostDeployment(commonO, deploymentO)
 		},
 	}
@@ -45,9 +48,20 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.Flags().BoolVar(&deploymentO.showNetworkCost, "show-network", false, "show data for network cost")
 	cmd.Flags().BoolVar(&deploymentO.showEfficiency, "show-efficiency", false, "show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
 	cmd.Flags().StringVarP(&deploymentO.filterNamespace, "namespace-filter", "N", "", "Limit results to only one namespace. Defaults to all namespaces.")
+	cmd.Flags().BoolVarP(&deploymentO.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
+}
+
+func (no *CostOptionsDeployment) Complete() {
+	if no.showAll {
+		no.showCPUCost = true
+		no.showMemoryCost = true
+		no.showGPUCost = true
+		no.showPVCost = true
+		no.showNetworkCost = true
+	}
 }
 
 func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {

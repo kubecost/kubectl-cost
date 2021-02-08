@@ -39,7 +39,7 @@ kubectl cost namespace --historical --window 5d --show-cpu --show-memory --show-
 
 Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
 ``` sh
-kubectl cost deployment --window month --show-cpu --show-memory --show-gpu --show-pv --show-network
+kubectl cost deployment --window month -A
 ```
 
 Show the projected monthly rate for each deployment in the `kubecost` namespace based on the last 3 days of activity with CPU cost breakdown.

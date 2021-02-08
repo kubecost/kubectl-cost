@@ -11,6 +11,7 @@ import (
 
 type CostOptionsNamespace struct {
 	isHistorical bool
+	showAll      bool
 
 	displayOptions
 }
@@ -30,6 +31,8 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
+			namespaceO.Complete()
+
 			return runCostNamespace(commonO, namespaceO)
 		},
 	}
@@ -42,9 +45,20 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.Flags().BoolVar(&namespaceO.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
 	cmd.Flags().BoolVar(&namespaceO.showNetworkCost, "show-network", false, "show data for network cost")
 	cmd.Flags().BoolVar(&namespaceO.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
+	cmd.Flags().BoolVarP(&namespaceO.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
+}
+
+func (no *CostOptionsNamespace) Complete() {
+	if no.showAll {
+		no.showCPUCost = true
+		no.showMemoryCost = true
+		no.showGPUCost = true
+		no.showPVCost = true
+		no.showNetworkCost = true
+	}
 }
 
 func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
