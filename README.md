@@ -61,6 +61,7 @@ The following flags modify the behavior of the subcommands:
     --show-memory                show data for memory cost
     --show-network               show data for network cost
     --show-pv                    show data for PV (physical volume) cost
+-A, --show-all-resources         Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.
     --window string              the window of data to query (default "yesterday")
 -N, --namespace-filter string    Limit results to only one namespace. Defaults to all namespaces.
 ```
