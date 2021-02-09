@@ -47,6 +47,11 @@ Show the projected monthly rate for each deployment in the `kubecost` namespace 
 kubectl cost deployment --window 3d --show-cpu -N kubecost
 ```
 
+The same, but with a non-standard Kubecost deployment in the namespace `kubecost-staging` with the cost analyzer service called `kubecost-staging-cost-analyzer`.
+``` sh
+kubectl cost deployment --window 3d --show-cpu -N kubecost -n kubecost-staging --service-name kubecost-staging-cost-analyzer
+```
+
 
 
 #### Flags
@@ -64,6 +69,7 @@ The following flags modify the behavior of the subcommands:
 -A, --show-all-resources         Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.
     --window string              the window of data to query (default "yesterday")
 -N, --namespace-filter string    Limit results to only one namespace. Defaults to all namespaces.
+    --service-name string        The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
 ```
 
 
