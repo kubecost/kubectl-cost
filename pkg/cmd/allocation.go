@@ -149,7 +149,7 @@ type allocationResponse struct {
 	Data []map[string]kubecost.Allocation `json:"data"`
 }
 
-func queryAllocation(clientset *kubernetes.Clientset, window, aggregate string) (allocationResponse, error) {
+func queryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) (allocationResponse, error) {
 
 	params := map[string]string{
 		// if we set this to false, output would be
@@ -164,7 +164,7 @@ func queryAllocation(clientset *kubernetes.Clientset, window, aggregate string) 
 	}
 
 	ctx := context.Background()
-	bytes, err := clientset.CoreV1().Services("kubecost").ProxyGet("", "kubecost-cost-analyzer", "9090", "/model/allocation", params).DoRaw(ctx)
+	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/allocation", params).DoRaw(ctx)
 
 	if err != nil {
 		return allocationResponse{}, fmt.Errorf("failed to proxy get kubecost: %s", err)

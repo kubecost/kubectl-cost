@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
+
 	// "k8s.io/client-go/tools/clientcmd"
 	// "k8s.io/client-go/tools/clientcmd/api"
 
@@ -101,6 +102,11 @@ func (o *CostOptionsCommon) Complete(cmd *cobra.Command, args []string) error {
 	o.restConfig, err = o.configFlags.ToRESTConfig()
 	if err != nil {
 		return err
+	}
+
+	if *o.configFlags.Namespace == "" {
+		klog.Info("No namespace set, defaulting kubecost namespace to 'kubecost'")
+		*o.configFlags.Namespace = "kubecost"
 	}
 
 	return nil
