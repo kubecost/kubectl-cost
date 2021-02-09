@@ -13,6 +13,13 @@ type CostOptionsNamespace struct {
 	isHistorical bool
 	showAll      bool
 
+	// The name of the cost-analyzer service in the cluster,
+	// in case user is running a non-standard name (like the
+	// staging helm chart). Combines with
+	// commonOptions.configFlags.Namespace to direct the API
+	// request.
+	serviceName string
+
 	displayOptions
 }
 
@@ -46,6 +53,7 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.Flags().BoolVar(&namespaceO.showNetworkCost, "show-network", false, "show data for network cost")
 	cmd.Flags().BoolVar(&namespaceO.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
 	cmd.Flags().BoolVarP(&namespaceO.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.")
+	cmd.Flags().StringVar(&namespaceO.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
 	commonO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
@@ -69,7 +77,7 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 	}
 
 	if !no.isHistorical {
-		aggCMResp, err := queryAggCostModel(clientset, co.costWindow, "namespace")
+		aggCMResp, err := queryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
@@ -85,7 +93,7 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
 	} else {
-		allocR, err := queryAllocation(clientset, co.costWindow, "namespace")
+		allocR, err := queryAllocation(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
 		if err != nil {
 			return fmt.Errorf("failed to query allocation API: %s", err)
 		}

@@ -4,9 +4,10 @@ import (
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
+	"k8s.io/klog"
+
 	// "k8s.io/client-go/tools/clientcmd"
 	// "k8s.io/client-go/tools/clientcmd/api"
 
@@ -103,6 +104,11 @@ func (o *CostOptionsCommon) Complete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
+	if *o.configFlags.Namespace == "" {
+		klog.Info("No namespace set, defaulting kubecost namespace to 'kubecost'")
+		*o.configFlags.Namespace = "kubecost"
+	}
+
 	return nil
 }
 
@@ -116,29 +122,6 @@ func (o *CostOptionsCommon) Validate() error {
 	if _, err := kubecost.ParseWindowWithOffset(o.costWindow, 0); err != nil {
 		return fmt.Errorf("failed to parse window: %s", err)
 	}
-
-	return nil
-}
-
-func (o *CostOptionsCommon) Run() error {
-
-	clientset, err := kubernetes.NewForConfig(o.restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %s", err)
-	}
-
-	allocResp, err := queryAllocation(clientset, o.costWindow, "")
-	if err != nil {
-		return fmt.Errorf("failed to query allocation API: %s", err)
-	}
-
-	// using allocResp.Data[0] is fine because we set the accumulate
-	// flag in the allocation API
-	// err = filterAllocations(allocResp.Data[0], o.costNamespace)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to filter allocations: %s", err)
-	// }
-	writeAllocationTable(o.Out, allocResp.Data[0])
 
 	return nil
 }
