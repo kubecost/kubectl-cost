@@ -87,7 +87,7 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 	} else {
 		allocR, err := queryAllocation(clientset, co.costWindow, "namespace")
 		if err != nil {
-			return fmt.Errorf("failed to query allocation API")
+			return fmt.Errorf("failed to query allocation API: %s", err)
 		}
 
 		// Use Data[0] because the query accumulates
