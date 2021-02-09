@@ -125,26 +125,3 @@ func (o *CostOptionsCommon) Validate() error {
 
 	return nil
 }
-
-func (o *CostOptionsCommon) Run() error {
-
-	clientset, err := kubernetes.NewForConfig(o.restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %s", err)
-	}
-
-	allocResp, err := queryAllocation(clientset, o.costWindow, "")
-	if err != nil {
-		return fmt.Errorf("failed to query allocation API: %s", err)
-	}
-
-	// using allocResp.Data[0] is fine because we set the accumulate
-	// flag in the allocation API
-	// err = filterAllocations(allocResp.Data[0], o.costNamespace)
-	// if err != nil {
-	// 	return fmt.Errorf("failed to filter allocations: %s", err)
-	// }
-	writeAllocationTable(o.Out, allocResp.Data[0])
-
-	return nil
-}
