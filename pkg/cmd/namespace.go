@@ -7,6 +7,8 @@ import (
 	"k8s.io/client-go/kubernetes"
 
 	"github.com/spf13/cobra"
+
+	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 type CostOptionsNamespace struct {
@@ -77,14 +79,14 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 	}
 
 	if !no.isHistorical {
-		aggCMResp, err := queryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
+		aggs, err := query.QueryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
 		err = writeAggregationRateTable(
 			co.Out,
-			aggCMResp.Data,
+			aggs,
 			[]string{"namespace"},
 			noopTitleExtractor,
 			no.displayOptions,
@@ -93,13 +95,13 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
 	} else {
-		allocR, err := queryAllocation(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
+		allocations, err := query.QueryAllocation(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
 		if err != nil {
 			return fmt.Errorf("failed to query allocation API: %s", err)
 		}
 
 		// Use Data[0] because the query accumulates
-		err = writeNamespaceTable(co.Out, allocR.Data[0], no.displayOptions)
+		err = writeNamespaceTable(co.Out, allocations[0], no.displayOptions)
 		if err != nil {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}

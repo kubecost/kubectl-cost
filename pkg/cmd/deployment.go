@@ -8,6 +8,8 @@ import (
 	"k8s.io/klog"
 
 	"github.com/spf13/cobra"
+
+	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 type CostOptionsDeployment struct {
@@ -80,19 +82,19 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 	}
 
 	if !no.isHistorical {
-		aggCMResp, err := queryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "deployment")
+		aggs, err := query.QueryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "deployment")
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
 		// don't show unallocated deployment data
-		delete(aggCMResp.Data, "__unallocated__")
+		delete(aggs, "__unallocated__")
 
-		applyNamespaceFilter(aggCMResp.Data, no.filterNamespace)
+		applyNamespaceFilter(aggs, no.filterNamespace)
 
 		err = writeAggregationRateTable(
 			co.Out,
-			aggCMResp.Data,
+			aggs,
 			[]string{"namespace", "deployment"},
 			deploymentTitleExtractor,
 			no.displayOptions,
@@ -110,7 +112,7 @@ func runCostDeployment(co *CostOptionsCommon, no *CostOptionsDeployment) error {
 
 // Applies the filter in place by deleting all entries from aggData that are not in
 // the namespace, unless it is an empty string in which case nothing is done.
-func applyNamespaceFilter(aggData map[string]aggregation, namespaceFilter string) {
+func applyNamespaceFilter(aggData map[string]query.Aggregation, namespaceFilter string) {
 	if namespaceFilter == "" {
 		return
 	}

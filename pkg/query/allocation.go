@@ -1,4 +1,4 @@
-package cmd
+package query
 
 import (
 	"context"
@@ -13,6 +13,10 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
+)
+
+const (
+	idleString = "__idle__"
 )
 
 // edits allocation map without copying
@@ -149,7 +153,7 @@ type allocationResponse struct {
 	Data []map[string]kubecost.Allocation `json:"data"`
 }
 
-func queryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) (allocationResponse, error) {
+func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) ([]map[string]kubecost.Allocation, error) {
 
 	params := map[string]string{
 		// if we set this to false, output would be
@@ -167,14 +171,14 @@ func queryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, service
 	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/allocation", params).DoRaw(ctx)
 
 	if err != nil {
-		return allocationResponse{}, fmt.Errorf("failed to proxy get kubecost: %s", err)
+		return nil, fmt.Errorf("failed to proxy get kubecost: %s", err)
 	}
 
 	var ar allocationResponse
 	err = json.Unmarshal(bytes, &ar)
 	if err != nil {
-		return ar, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
 	}
 
-	return ar, nil
+	return ar.Data, nil
 }

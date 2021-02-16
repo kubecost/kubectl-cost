@@ -34,10 +34,6 @@ var (
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
 )
 
-const (
-	idleString = "__idle__"
-)
-
 // CommonCostOptions provides information required to get
 // cost information from the kubecost API
 type CostOptionsCommon struct {

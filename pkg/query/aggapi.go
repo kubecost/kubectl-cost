@@ -1,4 +1,4 @@
-package cmd
+package query
 
 import (
 	"context"
@@ -15,10 +15,10 @@ import (
 type aggCostModelResponse struct {
 	Code int `json:"code"`
 	// Data map[string]costmodel.Aggregation `json:"data"`
-	Data map[string]aggregation `json:"data"`
+	Data map[string]Aggregation `json:"data"`
 }
 
-func queryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) (aggCostModelResponse, error) {
+func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) (map[string]Aggregation, error) {
 	params := map[string]string{
 		"window":      window,
 		"aggregation": aggregate,
@@ -29,22 +29,23 @@ func queryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, servi
 	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/aggregatedCostModel", params).DoRaw(ctx)
 
 	if err != nil {
-		return aggCostModelResponse{}, fmt.Errorf("failed to proxy get kubecost: %s", err)
+		return nil, fmt.Errorf("failed to proxy get kubecost: %s", err)
 	}
 
 	var ar aggCostModelResponse
 	err = json.Unmarshal(bytes, &ar)
 	if err != nil {
-		return ar, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
 	}
 
-	return ar, nil
+	return ar.Data, nil
 }
 
 // Hardcoded instead of imported because of dependency problems introduced when
 // github.com/kubecost/cost-model/pkg/costmodel is imported. The breakage involves
-// Azure's go-autorest, the azure-sdk-for-go, and k8s client-go.
-type aggregation struct {
+// Azure's go-autorest, the azure-sdk-for-go, and k8s client-go. Basically, cost-model
+// uses a very old version of client-go, etc. that causes a breakage.
+type Aggregation struct {
 	Aggregator                 string               `json:"aggregation"`
 	Subfields                  []string             `json:"subfields,omitempty"`
 	Environment                string               `json:"environment"`
