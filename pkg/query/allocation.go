@@ -4,13 +4,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"io"
 	"strings"
 
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/jedib0t/go-pretty/v6/table"
-	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
 )
@@ -40,83 +36,6 @@ func filterAllocations(allocations map[string]kubecost.Allocation, namespace str
 			}
 		}
 	}
-
-	return nil
-}
-
-func writeAllocationTable(out io.Writer, allocations map[string]kubecost.Allocation) error {
-	t := table.NewWriter()
-	t.SetOutputMirror(out)
-
-	t.SetColumnConfigs([]table.ColumnConfig{
-		{
-			Name:      "Cluster",
-			AutoMerge: true,
-		},
-		{
-			Name:      "Namespace",
-			AutoMerge: true,
-		},
-		{
-			Name:     "Pod",
-			WidthMax: 26,
-		},
-		{
-			Name:     "Container",
-			WidthMax: 26,
-		},
-		{
-			Name:        "Total Cost",
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		},
-	})
-
-	t.AppendHeader(table.Row{"Cluster", "Namespace", "Pod", "Container", "Total Cost"})
-	t.SortBy([]table.SortBy{
-		{
-			Name: "Cluster",
-			Mode: table.Dsc,
-		},
-		{
-			Name: "Namespace",
-			Mode: table.Dsc,
-		},
-		{
-			Name: "Total Cost",
-			Mode: table.Dsc,
-		},
-	})
-
-	var summedCost float64
-
-	for allocName, alloc := range allocations {
-
-		// idle allocation is a special case where information
-		// cannot be parsed from the allocation name
-		if alloc.Name == idleString {
-			namespace := idleString
-			cluster, _ := alloc.Properties.GetCluster()
-			totalCost := fmt.Sprintf("%.6f", alloc.TotalCost)
-			t.AppendRow(table.Row{
-				cluster, namespace, "", "", totalCost,
-			})
-			continue
-		}
-
-		cluster, _, namespace, pod, container, err := parseAllocationName(allocName)
-		if err != nil {
-			return fmt.Errorf("failed to parse allocation name: %s", err)
-		}
-
-		totalCost := fmt.Sprintf("%.6f", alloc.TotalCost)
-		t.AppendRow(table.Row{
-			cluster, namespace, pod, container, totalCost,
-		})
-		summedCost += alloc.TotalCost
-	}
-	t.AppendFooter(table.Row{"SUMMED", "", "", "", fmt.Sprintf("%.6f", summedCost)})
-	t.Render()
 
 	return nil
 }
