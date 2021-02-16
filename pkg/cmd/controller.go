@@ -13,6 +13,8 @@ import (
 // CostOptionsController contains the standard CostOptions and any
 // options specific to controller queries.
 type CostOptionsController struct {
+	filterNamespace string
+
 	CostOptions
 }
 
@@ -41,6 +43,7 @@ func newCmdCostController(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
+	cmd.Flags().StringVarP(&controllerO.filterNamespace, "namespace-filter", "N", "", "Limit results to only one namespace. Defaults to all namespaces.")
 	addCostOptionsFlags(cmd, &controllerO.CostOptions)
 	kubeO.configFlags.AddFlags(cmd.Flags())
 
@@ -58,6 +61,8 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 		// don't show unallocated controller data
 		delete(aggs, "__unallocated__")
 
+		applyNamespaceFilter(aggs, no.filterNamespace)
+
 		err = writeAggregationRateTable(
 			ko.Out,
 			aggs,
@@ -69,16 +74,9 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
 	} else {
-		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "controller")
-		if err != nil {
-			return fmt.Errorf("failed to query allocation API: %s", err)
-		}
-
-		// Use Data[0] because the query accumulates
-		err = writeNamespaceTable(ko.Out, allocations[0], no.displayOptions)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
+		// Not supported because the allocation API does not return the namespace
+		// of controllers.
+		return fmt.Errorf("kubectl cost controller does not yet support historical queries")
 	}
 
 	return nil
