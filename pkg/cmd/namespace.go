@@ -4,57 +4,41 @@ import (
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 
 	"github.com/spf13/cobra"
+
+	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
+// CostOptionsNamespace contains the standard CostOptions and any
+// options specific to namespace queries.
 type CostOptionsNamespace struct {
-	isHistorical bool
-	showAll      bool
-
-	// The name of the cost-analyzer service in the cluster,
-	// in case user is running a non-standard name (like the
-	// staging helm chart). Combines with
-	// commonOptions.configFlags.Namespace to direct the API
-	// request.
-	serviceName string
-
-	displayOptions
+	CostOptions
 }
 
 func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
-	commonO := NewCommonCostOptions(streams)
+	kubeO := NewKubeOptions(streams)
 	namespaceO := &CostOptionsNamespace{}
 
 	cmd := &cobra.Command{
 		Use:   "namespace",
 		Short: "view cost information aggregated by namespace",
 		RunE: func(c *cobra.Command, args []string) error {
-			if err := commonO.Complete(c, args); err != nil {
+			if err := kubeO.Complete(c, args); err != nil {
 				return err
 			}
-			if err := commonO.Validate(); err != nil {
+			if err := kubeO.Validate(); err != nil {
 				return err
 			}
 
 			namespaceO.Complete()
 
-			return runCostNamespace(commonO, namespaceO)
+			return runCostNamespace(kubeO, namespaceO)
 		},
 	}
 
-	cmd.Flags().StringVar(&commonO.costWindow, "window", "yesterday", "the window of data to query")
-	cmd.Flags().BoolVar(&namespaceO.isHistorical, "historical", false, "show the total cost during the window instead of the projected monthly rate based on the data in the window")
-	cmd.Flags().BoolVar(&namespaceO.showCPUCost, "show-cpu", false, "show data for CPU cost")
-	cmd.Flags().BoolVar(&namespaceO.showMemoryCost, "show-memory", false, "show data for memory cost")
-	cmd.Flags().BoolVar(&namespaceO.showGPUCost, "show-gpu", false, "show data for GPU cost")
-	cmd.Flags().BoolVar(&namespaceO.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
-	cmd.Flags().BoolVar(&namespaceO.showNetworkCost, "show-network", false, "show data for network cost")
-	cmd.Flags().BoolVar(&namespaceO.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
-	cmd.Flags().BoolVarP(&namespaceO.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.")
-	cmd.Flags().StringVar(&namespaceO.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
-	commonO.configFlags.AddFlags(cmd.Flags())
+	addCostOptionsFlags(cmd, &namespaceO.CostOptions)
+	kubeO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
 }
@@ -69,22 +53,17 @@ func (no *CostOptionsNamespace) Complete() {
 	}
 }
 
-func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
-
-	clientset, err := kubernetes.NewForConfig(co.restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %s", err)
-	}
+func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 
 	if !no.isHistorical {
-		aggCMResp, err := queryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
+		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace")
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
 		err = writeAggregationRateTable(
-			co.Out,
-			aggCMResp.Data,
+			ko.Out,
+			aggs,
 			[]string{"namespace"},
 			noopTitleExtractor,
 			no.displayOptions,
@@ -93,13 +72,13 @@ func runCostNamespace(co *CostOptionsCommon, no *CostOptionsNamespace) error {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}
 	} else {
-		allocR, err := queryAllocation(clientset, *co.configFlags.Namespace, no.serviceName, co.costWindow, "namespace")
+		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace")
 		if err != nil {
 			return fmt.Errorf("failed to query allocation API: %s", err)
 		}
 
-		// Use Data[0] because the query accumulates
-		err = writeNamespaceTable(co.Out, allocR.Data[0], no.displayOptions)
+		// Use allocations[0] because the query accumulates to a single result
+		err = writeNamespaceTable(ko.Out, allocations[0], no.displayOptions)
 		if err != nil {
 			return fmt.Errorf("failed to write table output: %s", err)
 		}

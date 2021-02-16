@@ -9,6 +9,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
+	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 const (
@@ -222,15 +223,6 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 	return nil
 }
 
-type displayOptions struct {
-	showCPUCost     bool
-	showMemoryCost  bool
-	showGPUCost     bool
-	showPVCost      bool
-	showNetworkCost bool
-	showEfficiency  bool
-}
-
 func deploymentTitleExtractor(aggregationName string) ([]string, error) {
 	sp := strings.Split(aggregationName, "/")
 
@@ -245,7 +237,7 @@ func noopTitleExtractor(aggregationName string) ([]string, error) {
 	return []string{aggregationName}, nil
 }
 
-func writeAggregationRateTable(out io.Writer, aggs map[string]aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) error {
+func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) error {
 	t := table.NewWriter()
 	t.SetOutputMirror(out)
 

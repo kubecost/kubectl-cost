@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
 	"k8s.io/klog"
@@ -12,8 +13,7 @@ import (
 	// "k8s.io/client-go/tools/clientcmd/api"
 
 	"github.com/spf13/cobra"
-
-	"github.com/kubecost/cost-model/pkg/kubecost"
+	// "github.com/kubecost/cost-model/pkg/kubecost"
 )
 
 // Note that the auth/gcp import is necessary https://github.com/kubernetes/client-go/issues/242
@@ -34,26 +34,21 @@ var (
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
 )
 
-const (
-	idleString = "__idle__"
-)
-
-// CommonCostOptions provides information required to get
-// cost information from the kubecost API
-type CostOptionsCommon struct {
+// KubeOptions provides information required to communicate
+// with the Kubernetes API
+type KubeOptions struct {
 	configFlags *genericclioptions.ConfigFlags
 
-	costWindow string
-
 	restConfig *rest.Config
+	clientset  *kubernetes.Clientset
 	args       []string
 
 	genericclioptions.IOStreams
 }
 
 // NewCommonCostOptions creates the default set of cost options
-func NewCommonCostOptions(streams genericclioptions.IOStreams) *CostOptionsCommon {
-	return &CostOptionsCommon{
+func NewKubeOptions(streams genericclioptions.IOStreams) *KubeOptions {
+	return &KubeOptions{
 		configFlags: genericclioptions.NewConfigFlags(true),
 
 		IOStreams: streams,
@@ -62,7 +57,7 @@ func NewCommonCostOptions(streams genericclioptions.IOStreams) *CostOptionsCommo
 
 // NewCmdCost provides a cobra command wrapping CostOptions
 func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
-	o := NewCommonCostOptions(streams)
+	o := NewKubeOptions(streams)
 
 	cmd := &cobra.Command{
 		Use:          "cost",
@@ -94,7 +89,7 @@ func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
 }
 
 // Complete sets all information required for getting cost information
-func (o *CostOptionsCommon) Complete(cmd *cobra.Command, args []string) error {
+func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
 	o.args = args
 
 	var err error
@@ -109,19 +104,26 @@ func (o *CostOptionsCommon) Complete(cmd *cobra.Command, args []string) error {
 		*o.configFlags.Namespace = "kubecost"
 	}
 
+	o.clientset, err = kubernetes.NewForConfig(o.restConfig)
+	if err != nil {
+		return fmt.Errorf("failed to create clientset: %s", err)
+	}
+
 	return nil
 }
 
 // Validate ensures that all required arguments and flag values are provided
-func (o *CostOptionsCommon) Validate() error {
-	if len(o.args) > 1 {
-		return fmt.Errorf("either one or no arguments are allowed")
-	}
+func (o *KubeOptions) Validate() error {
+	/*
+		if len(o.args) > 1 {
+			return fmt.Errorf("either one or no arguments are allowed")
+		}
 
-	// just make sure window parses client-side, perhaps not necessary
-	if _, err := kubecost.ParseWindowWithOffset(o.costWindow, 0); err != nil {
-		return fmt.Errorf("failed to parse window: %s", err)
-	}
+		// just make sure window parses client-side, perhaps not necessary
+		if _, err := kubecost.ParseWindowWithOffset(o.costWindow, 0); err != nil {
+			return fmt.Errorf("failed to parse window: %s", err)
+		}
+	*/
 
 	return nil
 }
