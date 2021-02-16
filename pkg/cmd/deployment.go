@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	"k8s.io/klog"
 
 	"github.com/spf13/cobra"
@@ -59,15 +58,10 @@ func (no *CostOptionsDeployment) Complete() {
 	}
 }
 
-func runCostDeployment(co *KubeOptions, no *CostOptionsDeployment) error {
-
-	clientset, err := kubernetes.NewForConfig(co.restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %s", err)
-	}
+func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(clientset, *co.configFlags.Namespace, no.serviceName, no.window, "deployment")
+		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment")
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
@@ -78,7 +72,7 @@ func runCostDeployment(co *KubeOptions, no *CostOptionsDeployment) error {
 		applyNamespaceFilter(aggs, no.filterNamespace)
 
 		err = writeAggregationRateTable(
-			co.Out,
+			ko.Out,
 			aggs,
 			[]string{"namespace", "deployment"},
 			deploymentTitleExtractor,
