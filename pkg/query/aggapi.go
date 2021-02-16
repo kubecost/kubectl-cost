@@ -18,11 +18,15 @@ type aggCostModelResponse struct {
 	Data map[string]Aggregation `json:"data"`
 }
 
-func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) (map[string]Aggregation, error) {
+func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string) (map[string]Aggregation, error) {
 	params := map[string]string{
 		"window":      window,
 		"aggregation": aggregate,
 		"rate":        "monthly",
+	}
+
+	if aggregationSubfield != "" {
+		params["aggregationSubfield"] = aggregationSubfield
 	}
 
 	ctx := context.Background()
