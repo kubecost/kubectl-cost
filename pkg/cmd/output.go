@@ -26,7 +26,7 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocation, opts displayOptions) error {
+func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions) error {
 	t := table.NewWriter()
 	t.SetOutputMirror(out)
 
@@ -37,7 +37,7 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 		AutoMerge: true,
 	})
 	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:      "namespace",
+		Name:      allocationType,
 		AutoMerge: true,
 	})
 
@@ -92,7 +92,7 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 	headerRow := table.Row{}
 
 	headerRow = append(headerRow, "Cluster")
-	headerRow = append(headerRow, "Namespace")
+	headerRow = append(headerRow, allocationType)
 
 	if opts.showCPUCost {
 		headerRow = append(headerRow, CPUCol)
@@ -139,12 +139,12 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 
 	for _, alloc := range allocations {
 		cluster, _ := alloc.Properties.GetCluster()
-		namespace := alloc.Name
+		allocName := alloc.Name
 
 		allocRow := table.Row{}
 
 		allocRow = append(allocRow, cluster)
-		allocRow = append(allocRow, namespace)
+		allocRow = append(allocRow, allocName)
 
 		if opts.showCPUCost {
 			allocRow = append(allocRow, formatFloat(alloc.CPUCost))

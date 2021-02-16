@@ -37,9 +37,9 @@ Show how much each namespace cost over the past 5 days with additional CPU and m
 kubectl cost namespace --historical --window 5d --show-cpu --show-memory --show-efficiency
 ```
 
-Show how much each controller cost over the past 5 days with additional PV (persistent volume) cost breakdown.
+Show the projected monthly rate for each controller based on the last 5 days of activity with PV (persistent volume) cost breakdown.
 ``` sh
-kubectl cost controller --historical --window 5d --show-pv
+kubectl cost controller --window 5d --show-pv
 ```
 
 Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
