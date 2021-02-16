@@ -84,6 +84,7 @@ func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.AddCommand(newCmdCostNamespace(streams))
 	cmd.AddCommand(newCmdCostDeployment(streams))
+	cmd.AddCommand(newCmdCostController(streams))
 
 	return cmd
 }
@@ -114,16 +115,6 @@ func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
 
 // Validate ensures that all required arguments and flag values are provided
 func (o *KubeOptions) Validate() error {
-	/*
-		if len(o.args) > 1 {
-			return fmt.Errorf("either one or no arguments are allowed")
-		}
-
-		// just make sure window parses client-side, perhaps not necessary
-		if _, err := kubecost.ParseWindowWithOffset(o.costWindow, 0); err != nil {
-			return fmt.Errorf("failed to parse window: %s", err)
-		}
-	*/
 
 	return nil
 }

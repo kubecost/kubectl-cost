@@ -31,7 +31,11 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			namespaceO.Complete()
+			namespaceO.CostOptions.Complete()
+
+			if err := namespaceO.CostOptions.Validate(); err != nil {
+				return err
+			}
 
 			return runCostNamespace(kubeO, namespaceO)
 		},
@@ -41,16 +45,6 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
-}
-
-func (no *CostOptionsNamespace) Complete() {
-	if no.showAll {
-		no.showCPUCost = true
-		no.showMemoryCost = true
-		no.showGPUCost = true
-		no.showPVCost = true
-		no.showNetworkCost = true
-	}
 }
 
 func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
