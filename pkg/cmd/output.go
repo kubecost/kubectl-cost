@@ -233,6 +233,18 @@ func deploymentTitleExtractor(aggregationName string) ([]string, error) {
 	return sp, nil
 }
 
+// see the results of /model/aggregatedCostModel?window=1d&aggregation=controller
+// format is namespace/controller (e.g. kubecost/deployment:kubecost-cost-analyzer)
+func controllerTitleExtractor(aggregationName string) ([]string, error) {
+	sp := strings.Split(aggregationName, "/")
+
+	if len(sp) != 2 {
+		return nil, fmt.Errorf("deployment title should have 2 fields")
+	}
+
+	return sp, nil
+}
+
 func noopTitleExtractor(aggregationName string) ([]string, error) {
 	return []string{aggregationName}, nil
 }
