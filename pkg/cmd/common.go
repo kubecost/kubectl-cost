@@ -1,6 +1,12 @@
 package cmd
 
-import "github.com/spf13/cobra"
+import (
+	"fmt"
+
+	"github.com/spf13/cobra"
+
+	"github.com/kubecost/cost-model/pkg/kubecost"
+)
 
 // CostOptions holds common options for querying and displaying
 // data from the kubecost API
@@ -40,4 +46,24 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().BoolVar(&options.showEfficiency, "show-efficiency", false, "Show efficiency of cost alongside CPU and memory cost. Only works with --historical.")
 	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.")
 	cmd.Flags().StringVar(&options.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
+}
+
+func (co *CostOptions) Complete() {
+	if co.showAll {
+		co.showCPUCost = true
+		co.showMemoryCost = true
+		co.showGPUCost = true
+		co.showPVCost = true
+		co.showNetworkCost = true
+	}
+}
+
+func (co *CostOptions) Validate() error {
+	// make sure window parses client-side, may not be necessary but allows
+	// for a nicer error message for the user
+	if _, err := kubecost.ParseWindowWithOffset(co.window, 0); err != nil {
+		return fmt.Errorf("failed to parse window: %s", err)
+	}
+
+	return nil
 }

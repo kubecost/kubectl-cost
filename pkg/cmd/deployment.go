@@ -34,7 +34,11 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			deploymentO.Complete()
+			deploymentO.CostOptions.Complete()
+
+			if err := deploymentO.CostOptions.Validate(); err != nil {
+				return err
+			}
 
 			return runCostDeployment(kubeO, deploymentO)
 		},
@@ -46,16 +50,6 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeO.configFlags.AddFlags(cmd.Flags())
 
 	return cmd
-}
-
-func (no *CostOptionsDeployment) Complete() {
-	if no.showAll {
-		no.showCPUCost = true
-		no.showMemoryCost = true
-		no.showGPUCost = true
-		no.showPVCost = true
-		no.showNetworkCost = true
-	}
 }
 
 func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
