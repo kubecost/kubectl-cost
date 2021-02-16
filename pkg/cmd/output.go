@@ -223,15 +223,6 @@ func writeNamespaceTable(out io.Writer, allocations map[string]kubecost.Allocati
 	return nil
 }
 
-type displayOptions struct {
-	showCPUCost     bool
-	showMemoryCost  bool
-	showGPUCost     bool
-	showPVCost      bool
-	showNetworkCost bool
-	showEfficiency  bool
-}
-
 func deploymentTitleExtractor(aggregationName string) ([]string, error) {
 	sp := strings.Split(aggregationName, "/")
 
