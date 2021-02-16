@@ -23,7 +23,7 @@ As long as the binary is still named `kubectl-cost` and is somewhere in your `PA
 
 ## Usage
 
-There are three supported subcommands: `namespace`, `deployment`, and `controller`, which display cost information aggregated by the name of the subcommand. Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
+There are three supported subcommands: `namespace`, `deployment`, `controller`, and `label`, which display cost information aggregated by the name of the subcommand (see Examples). Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
 
 
 #### Examples
@@ -40,6 +40,11 @@ kubectl cost namespace --historical --window 5d --show-cpu --show-memory --show-
 Show the projected monthly rate for each controller based on the last 5 days of activity with PV (persistent volume) cost breakdown.
 ``` sh
 kubectl cost controller --window 5d --show-pv
+```
+
+Show costs over the past 5 days broken down by the value of the `app` label:
+``` sh
+kubectl cost label --historical -l app
 ```
 
 Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
