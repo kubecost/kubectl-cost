@@ -6,9 +6,11 @@ go 1.15
 
 require (
 	github.com/davecgh/go-spew v1.1.1
+	github.com/gdamore/tcell/v2 v2.0.1-0.20201017141208-acf90d56d591
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.1.0
 	github.com/kubecost/cost-model v1.53.1-0.20210203002707-90986f4155cd
+	github.com/rivo/tview v0.0.0-20210216210747-c3311ba972c1
 	github.com/spf13/cobra v1.1.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/crypto v0.0.0-20201221181555-eec23a3978ad // indirect

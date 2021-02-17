@@ -86,6 +86,7 @@ func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.AddCommand(newCmdCostDeployment(streams))
 	cmd.AddCommand(newCmdCostController(streams))
 	cmd.AddCommand(newCmdCostLabel(streams))
+	cmd.AddCommand(newCmdTUI(streams))
 
 	return cmd
 }
