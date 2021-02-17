@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"strings"
+	"time"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
@@ -58,9 +59,10 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 	displayOptionsList := tview.NewList()
 
 	var aggs map[string]query.Aggregation
+	var lastUpdated time.Time
 	var err error
 	var windowIndex int = 0
-	var aggregationIndex int = 0
+	var aggregation string = "namespace"
 
 	windowOptions := []string{
 		"1d",
@@ -68,38 +70,38 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 		"7d",
 	}
 
-	aggregationOptions := []aggregationTableOptions{
-		{
-			aggregation:    "namespace",
+	aggregationOptions := map[string]aggregationTableOptions{
+		"namespace": {
 			headers:        []string{"Namespace"},
 			titleExtractor: noopTitleExtractor,
 		},
-		{
-			aggregation:    "deployment",
+		"deployment": {
 			headers:        []string{"Namespace", "Deployment"},
 			titleExtractor: deploymentTitleExtractor,
 		},
 	}
 
 	requeryData := func() {
-		aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, "kubecost-cost-analyzer", windowOptions[windowIndex], aggregationOptions[aggregationIndex].aggregation, "")
+		aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, "kubecost-cost-analyzer", windowOptions[windowIndex], aggregation, "")
 
 		// TODO: handle better
 		if err != nil {
 			panic(err)
 		}
+
+		lastUpdated = time.Now()
 	}
 
 	redrawTable := func() {
 		tFrame.Clear()
 		table.Clear()
 
-		tWriter := makeAggregationRateTable(aggs, aggregationOptions[aggregationIndex].headers, aggregationOptions[aggregationIndex].titleExtractor, do)
+		tWriter := makeAggregationRateTable(aggs, aggregationOptions[aggregation].headers, aggregationOptions[aggregation].titleExtractor, do)
 		serializedTable := tWriter.RenderCSV()
 
 		setTableFromCSV(table, serializedTable)
 
-		table.SetTitle(fmt.Sprintf("%s Monthly Rate - Window %s", aggregationOptions[aggregationIndex].aggregation, windowOptions[windowIndex]))
+		table.SetTitle(fmt.Sprintf(" %s Monthly Rate - Window %s - Updated %02d:%02d:%02d ", aggregation, windowOptions[windowIndex], lastUpdated.Hour(), lastUpdated.Minute(), lastUpdated.Second()))
 		table.SetBorder(true)
 		tFrame.SetBorder(false)
 	}
@@ -129,32 +131,63 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 		redrawTable()
 	}
 
-	changeWindow := func() {
-		windowIndex = (windowIndex + 1) % len(windowOptions)
-		requeryData()
-		redrawTable()
-	}
-
-	changeAggregation := func() {
-		aggregationIndex = (aggregationIndex + 1) % len(aggregationOptions)
-		requeryData()
-		redrawTable()
-	}
-
 	redrawList := func() {
 		displayOptionsList.Clear()
 
 		displayOptionsList.ShowSecondaryText(false).
-			AddItem("Change Aggregation", "", 'a', changeAggregation).
-			AddItem("Change Window", "", 'w', changeWindow).
 			AddItem("Show CPU", "", 'c', showCPU).
 			AddItem("Show Memory", "", 'm', showMemory).
 			AddItem("Show PV", "", 'p', showPV).
 			AddItem("Show GPU", "", 'g', showGPU).
-			AddItem("Show Network", "", 'n', showNetwork)
+			AddItem("Show Network", "", 'n', showNetwork).
+			AddItem("ESC to change other options", "", '-', nil)
 	}
 
-	fb := tview.NewFlex().AddItem(tFrame, 20, 1, false).AddItem(displayOptionsList, 0, 1, true)
+	aggregationDropdown := tview.NewDropDown().SetLabel("Aggregate by: ")
+	aggregationStrings := []string{}
+	for agg, _ := range aggregationOptions {
+		aggregationStrings = append(aggregationStrings, agg)
+	}
+
+	aggregationEvent := func(selection string, index int) {
+		aggregation = selection
+		requeryData()
+		redrawTable()
+	}
+
+	aggregationDropdown.SetOptions(aggregationStrings, aggregationEvent)
+
+	windowDropdown := tview.NewDropDown().SetLabel("Query window: ")
+	windowEvent := func(selection string, index int) {
+		windowIndex = index
+		requeryData()
+		redrawTable()
+	}
+	windowDropdown.SetOptions(windowOptions, windowEvent)
+
+	displayOptionsList.SetDoneFunc(func() {
+		app.SetFocus(aggregationDropdown)
+	})
+
+	aggregationDropdown.SetDoneFunc(func(key tcell.Key) {
+		app.SetFocus(windowDropdown)
+	})
+
+	windowDropdown.SetDoneFunc(func(key tcell.Key) {
+		app.SetFocus(displayOptionsList)
+	})
+
+	optionsFlex := tview.NewFlex()
+	optionsFlex.AddItem(displayOptionsList, 0, 1, true)
+
+	dropDownFlex := tview.NewFlex()
+	dropDownFlex.SetDirection(tview.FlexRow)
+	dropDownFlex.AddItem(aggregationDropdown, 0, 1, true)
+	dropDownFlex.AddItem(windowDropdown, 0, 1, true)
+
+	optionsFlex.AddItem(dropDownFlex, 0, 1, true)
+
+	fb := tview.NewFlex().AddItem(tFrame, 0, 1, false).AddItem(optionsFlex, 6, 1, true)
 	fb.SetDirection(tview.FlexRow)
 
 	requeryData()
