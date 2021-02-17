@@ -126,7 +126,7 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 	t.SortBy([]table.SortBy{
 		{
 			Name: "Total Cost (All)",
-			Mode: table.Dsc,
+			Mode: table.DscNumeric,
 		},
 	})
 
@@ -349,10 +349,9 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 	t.AppendHeader(headerRow)
 
 	sortByConfig := []table.SortBy{}
-
 	sortByConfig = append(sortByConfig, table.SortBy{
 		Name: "Monthly Rate (All)",
-		Mode: table.Dsc,
+		Mode: table.DscNumeric,
 	})
 
 	t.SortBy(sortByConfig)
