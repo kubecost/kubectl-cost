@@ -123,6 +123,10 @@ var aggregationOptions = map[string]aggregationTableOptions{
 		headers:        []string{"Namespace", "Deployment"},
 		titleExtractor: deploymentTitleExtractor,
 	},
+	"controller": {
+		headers:        []string{"Namespace", "Controller"},
+		titleExtractor: controllerTitleExtractor,
+	},
 }
 
 var windowOptions = []string{
