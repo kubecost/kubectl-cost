@@ -48,7 +48,7 @@ type aggregationTableOptions struct {
 	titleExtractor func(string) ([]string, error)
 }
 
-func buildDisplayOptionsList(do *displayOptions, redrawTable func()) *tview.List {
+func populateDisplayOptionsList(displayOptionsList *tview.List, do *displayOptions, redrawTable func(), navigateTable func()) {
 	showCPU := func() {
 		do.showCPUCost = !do.showCPUCost
 		redrawTable()
@@ -74,16 +74,14 @@ func buildDisplayOptionsList(do *displayOptions, redrawTable func()) *tview.List
 		redrawTable()
 	}
 
-	displayOptionsList := tview.NewList()
 	displayOptionsList.ShowSecondaryText(false).
 		AddItem("Show CPU", "", 'c', showCPU).
 		AddItem("Show Memory", "", 'm', showMemory).
 		AddItem("Show PV", "", 'p', showPV).
 		AddItem("Show GPU", "", 'g', showGPU).
 		AddItem("Show Network", "", 'n', showNetwork).
+		AddItem("Navigate Table", "", 't', navigateTable).
 		AddItem("ESC to change other options", "", '-', nil)
-
-	return displayOptionsList
 }
 
 func buildAggregateByDropdown(aggregation *string, requeryData func()) *tview.DropDown {
@@ -186,7 +184,15 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 		}()
 	}
 
-	displayOptionsList := buildDisplayOptionsList(&do, redrawTable)
+	displayOptionsList := tview.NewList()
+
+	navigate := func() {
+		app.SetFocus(table)
+		table.SetDoneFunc(func(key tcell.Key) {
+			app.SetFocus(displayOptionsList)
+		})
+	}
+	populateDisplayOptionsList(displayOptionsList, &do, redrawTable, navigate)
 
 	aggregationDropdown := buildAggregateByDropdown(&aggregation, requeryData)
 	windowDropdown := buildWindowDropdown(&windowIndex, requeryData)
@@ -213,7 +219,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 	optionsFlex.AddItem(dropDownFlex, 0, 1, true)
 
-	fb := tview.NewFlex().AddItem(table, 0, 1, false).AddItem(optionsFlex, 6, 1, true)
+	fb := tview.NewFlex().AddItem(table, 0, 1, false).AddItem(optionsFlex, 7, 1, true)
 	fb.SetDirection(tview.FlexRow)
 
 	requeryData()
