@@ -27,9 +27,15 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions) error {
-	t := table.NewWriter()
+func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions) {
+	t := makeAllocationTable(allocationType, allocations, opts)
+
 	t.SetOutputMirror(out)
+	t.Render()
+}
+
+func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions) table.Writer {
+	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
 
@@ -239,9 +245,8 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 	footerRow = append(footerRow, formatFloat(summedCost))
 
 	t.AppendFooter(footerRow)
-	t.Render()
 
-	return nil
+	return t
 }
 
 func deploymentTitleExtractor(aggregationName string) ([]string, error) {
@@ -270,9 +275,15 @@ func noopTitleExtractor(aggregationName string) ([]string, error) {
 	return []string{aggregationName}, nil
 }
 
-func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) error {
-	t := table.NewWriter()
+func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) {
+	t := makeAggregationRateTable(aggs, rowTitles, rowTitleExtractor, opts)
+
 	t.SetOutputMirror(out)
+	t.Render()
+}
+
+func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) table.Writer {
+	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
 
@@ -511,7 +522,6 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 	footerRow = append(footerRow, formatFloat(summedCost))
 
 	t.AppendFooter(footerRow)
-	t.Render()
 
-	return nil
+	return t
 }

@@ -67,16 +67,13 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		// don't show unallocated controller data
 		delete(aggs, "__unallocated__")
 
-		err = writeAggregationRateTable(
+		writeAggregationRateTable(
 			ko.Out,
 			aggs,
 			[]string{"label"},
 			noopTitleExtractor,
 			no.displayOptions,
 		)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
 	} else {
 		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, fmt.Sprintf("label:%s", no.queryLabel))
 		if err != nil {
@@ -84,10 +81,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
-		err = writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
+		writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions)
 	}
 
 	return nil

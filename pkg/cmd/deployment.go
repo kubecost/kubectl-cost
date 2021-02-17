@@ -65,16 +65,13 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 
 		applyNamespaceFilter(aggs, no.filterNamespace)
 
-		err = writeAggregationRateTable(
+		writeAggregationRateTable(
 			ko.Out,
 			aggs,
 			[]string{"namespace", "deployment"},
 			deploymentTitleExtractor,
 			no.displayOptions,
 		)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
 	} else {
 		// Not supported because the allocation API does not return deployment names.
 		return fmt.Errorf("kubectl cost deployment does not yet support historical queries")

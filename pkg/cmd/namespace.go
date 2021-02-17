@@ -55,16 +55,13 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
-		err = writeAggregationRateTable(
+		writeAggregationRateTable(
 			ko.Out,
 			aggs,
 			[]string{"namespace"},
 			noopTitleExtractor,
 			no.displayOptions,
 		)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
 	} else {
 		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace")
 		if err != nil {
@@ -72,10 +69,7 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
-		err = writeAllocationTable(ko.Out, "Namespace", allocations[0], no.displayOptions)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
+		writeAllocationTable(ko.Out, "Namespace", allocations[0], no.displayOptions)
 	}
 
 	return nil
