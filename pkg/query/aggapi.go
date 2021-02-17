@@ -18,7 +18,7 @@ type aggCostModelResponse struct {
 	Data map[string]Aggregation `json:"data"`
 }
 
-func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string) (map[string]Aggregation, error) {
+func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string, ctx context.Context) (map[string]Aggregation, error) {
 	params := map[string]string{
 		"window":      window,
 		"aggregation": aggregate,
@@ -29,7 +29,6 @@ func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, servi
 		params["aggregationSubfield"] = aggregationSubfield
 	}
 
-	ctx := context.Background()
 	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/aggregatedCostModel", params).DoRaw(ctx)
 
 	if err != nil {

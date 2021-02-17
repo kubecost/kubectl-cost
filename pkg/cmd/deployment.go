@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -55,7 +56,7 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", "")
+		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", "", context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}

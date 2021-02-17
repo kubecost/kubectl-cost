@@ -72,7 +72,7 @@ type allocationResponse struct {
 	Data []map[string]kubecost.Allocation `json:"data"`
 }
 
-func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string) ([]map[string]kubecost.Allocation, error) {
+func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string, ctx context.Context) ([]map[string]kubecost.Allocation, error) {
 
 	params := map[string]string{
 		// if we set this to false, output would be
@@ -86,7 +86,6 @@ func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, service
 		params["aggregate"] = aggregate
 	}
 
-	ctx := context.Background()
 	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/allocation", params).DoRaw(ctx)
 
 	if err != nil {

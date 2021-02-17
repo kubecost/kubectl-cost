@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -50,7 +51,7 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", "")
+		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", "", context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
@@ -63,7 +64,7 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 			no.displayOptions,
 		)
 	} else {
-		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace")
+		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to query allocation API: %s", err)
 		}
