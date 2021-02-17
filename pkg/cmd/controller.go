@@ -63,16 +63,13 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 
 		applyNamespaceFilter(aggs, no.filterNamespace)
 
-		err = writeAggregationRateTable(
+		writeAggregationRateTable(
 			ko.Out,
 			aggs,
 			[]string{"namespace", "controller"},
 			controllerTitleExtractor,
 			no.displayOptions,
 		)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
 	} else {
 		// Not supported because the allocation API does not return the namespace
 		// of controllers.
