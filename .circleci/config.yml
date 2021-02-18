@@ -8,3 +8,40 @@ jobs:
       - checkout
       - run: go test -v ./...
       - run: make build
+      - run: mkdir -p /tmp/workspace/artifacts
+      - run: cp cmd/kubectl-cost/kubectl-cost /tmp/workspace/artifacts
+
+      - persist_to_workspace:
+          root: /tmp/workspace
+          paths:
+            - artifacts
+
+  release:
+    docker:
+      - image: cimg/go:1.15.8
+    steps:
+      - attach_workspace:
+          at: /tmp/workspace
+      - run:
+          name: "Publish Release on GitHub"
+          command: |
+            go get github.com/tcnksm/ghr
+            VERSION=${CIRCLE_TAG}
+            ghr -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${VERSION} /tmp/workspace/artifacts
+
+workflows:
+  version: 2
+  build-and-release:
+    jobs:
+      - build:
+          filters:
+            tags:
+              only: /^v.*/
+      - release:
+          requires:
+            - build
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
