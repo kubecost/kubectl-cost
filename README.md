@@ -4,7 +4,15 @@
 
 ## Installation
 
-#### This software requires that you have a running deployment of kubecost in your cluster. See [our docs](https://docs.kubecost.com/install) for installation instructions.
+> This software requires that you have a running deployment of [Kubecost](https://kubecost.com/) in your cluster. See [our docs](https://docs.kubecost.com/install) for installation instructions.
+
+#### Latest Release
+
+Go the the [releases](https://github.com/kubecost/kubectl-cost/releases) and download the appropriate binary for your system. Rename it to `kubectl-cost` and put it in your `PATH`. 
+
+As long as the binary is still named `kubectl-cost` and is somewhere in your `PATH`, it will be usable. This is because `kubectl` automatically finds plugins by looking for executables prefixed with `kubecost-` in your `PATH`.
+
+#### From Source
 
 Build:
 
