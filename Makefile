@@ -1,3 +1,24 @@
+.PHONY: darwin-amd64
+darwin-amd64:
+	cd cmd/kubectl-cost && GOOS=darwin GOARCH=amd64 go build -o kubectl-cost-darwin-amd64
+
+# note: requires go 1.16, not included in release yet
+.PHONY: darwin-arm64
+darwin-arm64:
+	cd cmd/kubectl-cost && GOOS=darwin GOARCH=arm64 go build -o kubectl-cost-darwin-arm64
+
+.PHONY: linux-amd64
+linux-amd64:
+	cd cmd/kubectl-cost && GOOS=linux GOARCH=amd64 go build -o kubectl-cost-linux-amd64
+
+.PHONY: windows-amd64
+windows-amd64:
+	cd cmd/kubectl-cost && GOOS=windows GOARCH=amd64 go build -o kubectl-cost-windows-amd64
+
+# TODO: add darwin-arm64 when go 1.16 is available
+.PHONY: release
+release: darwin-amd64 linux-amd64 windows-amd64
+
 .PHONY: build
 build:
 	cd cmd/kubectl-cost && go build
