@@ -4,7 +4,7 @@
 
 ## Installation
 
-> This software requires that you have a running deployment of kubecost in your cluster. See [our docs](https://docs.kubecost.com/install) for installation instructions.
+> This software requires that you have a running deployment of [Kubecost](https://kubecost.com/) in your cluster. See [our docs](https://docs.kubecost.com/install) for installation instructions.
 
 #### Latest Release
 
