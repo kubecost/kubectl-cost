@@ -74,12 +74,18 @@ func populateDisplayOptionsList(displayOptionsList *tview.List, do *displayOptio
 		redrawTable()
 	}
 
+	showShared := func() {
+		do.showSharedCost = !do.showSharedCost
+		redrawTable()
+	}
+
 	displayOptionsList.ShowSecondaryText(false).
 		AddItem("Show CPU", "", 'c', showCPU).
 		AddItem("Show Memory", "", 'm', showMemory).
 		AddItem("Show PV", "", 'p', showPV).
 		AddItem("Show GPU", "", 'g', showGPU).
 		AddItem("Show Network", "", 'n', showNetwork).
+		AddItem("Show Shared", "", 's', showShared).
 		AddItem("Navigate Table", "", 't', navigateTable).
 		AddItem("ESC to change other options", "", '-', nil)
 }
@@ -219,7 +225,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 	optionsFlex.AddItem(dropDownFlex, 0, 1, true)
 
-	fb := tview.NewFlex().AddItem(table, 0, 1, false).AddItem(optionsFlex, 7, 1, true)
+	fb := tview.NewFlex().AddItem(table, 0, 1, false).AddItem(optionsFlex, 8, 1, true)
 	fb.SetDirection(tview.FlexRow)
 
 	requeryData()
