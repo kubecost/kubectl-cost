@@ -268,12 +268,23 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
 			Name: CPUCol,
 		})
+
+		if opts.showEfficiency {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name: CPUEfficiencyCol,
+			})
+		}
 	}
 
 	if opts.showMemoryCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
 			Name: MemoryCol,
 		})
+		if opts.showEfficiency {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name: MemoryEfficiencyCol,
+			})
+		}
 	}
 
 	if opts.showGPUCost {
@@ -326,10 +337,16 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 
 	if opts.showCPUCost {
 		headerRow = append(headerRow, CPUCol)
+		if opts.showEfficiency {
+			headerRow = append(headerRow, CPUEfficiencyCol)
+		}
 	}
 
 	if opts.showMemoryCost {
 		headerRow = append(headerRow, MemoryCol)
+		if opts.showEfficiency {
+			headerRow = append(headerRow, MemoryEfficiencyCol)
+		}
 	}
 
 	if opts.showGPUCost {
@@ -382,11 +399,17 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 		if opts.showCPUCost {
 			agRow = append(agRow, formatFloat(agg.CPUCost))
 			summedCPU += agg.CPUCost
+			if opts.showEfficiency {
+				agRow = append(agRow, formatFloat(agg.CPUEfficiency))
+			}
 		}
 
 		if opts.showMemoryCost {
 			agRow = append(agRow, formatFloat(agg.RAMCost))
 			summedMemory += agg.RAMCost
+			if opts.showEfficiency {
+				agRow = append(agRow, formatFloat(agg.RAMEfficiency))
+			}
 		}
 
 		if opts.showGPUCost {
@@ -421,10 +444,16 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 
 	if opts.showCPUCost {
 		footerRow = append(footerRow, formatFloat(summedCPU))
+		if opts.showEfficiency {
+			footerRow = append(footerRow, "")
+		}
 	}
 
 	if opts.showMemoryCost {
 		footerRow = append(footerRow, formatFloat(summedMemory))
+		if opts.showEfficiency {
+			footerRow = append(footerRow, "")
+		}
 	}
 
 	if opts.showGPUCost {
