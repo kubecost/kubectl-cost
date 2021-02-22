@@ -20,6 +20,7 @@ const (
 	GPUCol              = "GPU"
 	PVCol               = "PV"
 	NetworkCol          = "Network"
+	SharedCol           = "Shared Cost"
 )
 
 func formatFloat(f float64) string {
@@ -81,6 +82,12 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 		})
 	}
 
+	if opts.showSharedCost {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name: SharedCol,
+		})
+	}
+
 	columnConfigs = append(columnConfigs, table.ColumnConfig{
 		Name:        "Total Cost (All)",
 		Align:       text.AlignRight,
@@ -120,6 +127,10 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 		headerRow = append(headerRow, NetworkCol)
 	}
 
+	if opts.showSharedCost {
+		headerRow = append(headerRow, SharedCol)
+	}
+
 	headerRow = append(headerRow, "Total Cost (All)")
 
 	t.AppendHeader(headerRow)
@@ -136,6 +147,7 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 	var summedGPU float64
 	var summedPV float64
 	var summedNetwork float64
+	var summedShared float64
 
 	for _, alloc := range allocations {
 		cluster, _ := alloc.Properties.GetCluster()
@@ -177,6 +189,11 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 			summedNetwork += alloc.NetworkCost
 		}
 
+		if opts.showSharedCost {
+			allocRow = append(allocRow, formatFloat(alloc.SharedCost))
+			summedShared += alloc.SharedCost
+		}
+
 		cumulativeCost := formatFloat(alloc.TotalCost)
 		allocRow = append(allocRow, cumulativeCost)
 
@@ -213,6 +230,10 @@ func writeAllocationTable(out io.Writer, allocationType string, allocations map[
 
 	if opts.showNetworkCost {
 		footerRow = append(footerRow, formatFloat(summedNetwork))
+	}
+
+	if opts.showSharedCost {
+		footerRow = append(footerRow, formatFloat(summedShared))
 	}
 
 	footerRow = append(footerRow, formatFloat(summedCost))
@@ -305,6 +326,12 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 		})
 	}
 
+	if opts.showSharedCost {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name: SharedCol,
+		})
+	}
+
 	columnConfigs = append(columnConfigs, table.ColumnConfig{
 		Name:        "Monthly Rate (All)",
 		Align:       text.AlignRight,
@@ -361,6 +388,10 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 		headerRow = append(headerRow, NetworkCol)
 	}
 
+	if opts.showSharedCost {
+		headerRow = append(headerRow, SharedCol)
+	}
+
 	headerRow = append(headerRow, "Monthly Rate (All)")
 
 	t.AppendHeader(headerRow)
@@ -380,6 +411,7 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 	var summedGPU float64
 	var summedPV float64
 	var summedNetwork float64
+	var summedShared float64
 
 	for agBy, agg := range aggs {
 
@@ -427,6 +459,11 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 			summedNetwork += agg.NetworkCost
 		}
 
+		if opts.showSharedCost {
+			agRow = append(agRow, formatFloat(agg.SharedCost))
+			summedShared += agg.SharedCost
+		}
+
 		cumulativeCost := formatFloat(agg.TotalCost)
 		agRow = append(agRow, cumulativeCost)
 
@@ -466,6 +503,10 @@ func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation,
 
 	if opts.showNetworkCost {
 		footerRow = append(footerRow, formatFloat(summedNetwork))
+	}
+
+	if opts.showSharedCost {
+		footerRow = append(footerRow, formatFloat(summedShared))
 	}
 
 	footerRow = append(footerRow, formatFloat(summedCost))

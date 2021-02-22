@@ -79,11 +79,12 @@ The following flags modify the behavior of the subcommands:
 ```
     --historical                 show the total cost during the window instead of the projected monthly rate based on the data in the window"
     --show-cpu                   show data for CPU cost
-    --show-efficiency            show efficiency of cost alongside CPU and memory cost
+    --show-efficiency            show efficiency of cost alongside CPU and memory cost (default true)
     --show-gpu                   show data for GPU cost
     --show-memory                show data for memory cost
     --show-network               show data for network cost
     --show-pv                    show data for PV (physical volume) cost
+    --show-shared                show shared cost data
 -A, --show-all-resources         Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.
     --window string              the window of data to query (default "yesterday")
 -N, --namespace-filter string    Limit results to only one namespace. Defaults to all namespaces.
