@@ -7,7 +7,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
 	"k8s.io/client-go/rest"
-	"k8s.io/klog"
 
 	// "k8s.io/client-go/tools/clientcmd"
 	// "k8s.io/client-go/tools/clientcmd/api"
@@ -102,7 +101,9 @@ func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
 	}
 
 	if *o.configFlags.Namespace == "" {
-		klog.Info("No namespace set, defaulting kubecost namespace to 'kubecost'")
+		// Don't log here, as this is expected behavior. This is hard to communicate
+		// in the --help output because the --namespace flag is set up by
+		// genericclioptions.
 		*o.configFlags.Namespace = "kubecost"
 	}
 
