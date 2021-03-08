@@ -23,11 +23,23 @@ var (
     # Show the projected monthly rate for each namespace based on the last 5 days of activity.
     %[1]s cost namespace --window 5d
 
-    # Show how much each namespace cost over the past 5 days with additional CPU and memory cost and efficiency breakdown.
-    %[1]s cost namespace --historical --window 5d --show-cpu --show-memory --show-efficiency
+    # Show how much each namespace cost over the past 5 days with additional CPU and memory cost and without efficiency.
+    %[1]s cost namespace --historical --window 5d --show-cpu --show-memory --show-efficiency=false
+
+    # Show the projected monthly rate for each controller based on the last 5 days of activity with PV (persistent volume) cost breakdown.
+    %[1]s cost controller --window 5d --show-pv
+
+    # Show costs over the past 5 days broken down by the value of the "app" label:
+    %[1]s cost label --historical -l app
 
     # Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
-    %[1]s cost deployment --window month --show-cpu --show-memory --show-gpu --show-pv --show-network
+    %[1]s cost deployment --window month -A
+
+    # Show the projected monthly rate for each deployment in the "kubecost" namespace based on the last 3 days of activity with CPU cost breakdown.
+    %[1]s cost deployment --window 3d --show-cpu -N kubecost
+
+    # The same, but with a non-standard Kubecost deployment in the namespace "kubecost-staging" with the cost analyzer service called "kubecost-staging-cost-analyzer".
+    %[1]s cost deployment --window 3d --show-cpu -N kubecost -n kubecost-staging --service-name kubecost-staging-cost-analyzer
 `
 
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
