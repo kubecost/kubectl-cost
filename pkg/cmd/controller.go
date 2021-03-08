@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -53,7 +54,7 @@ func newCmdCostController(streams genericclioptions.IOStreams) *cobra.Command {
 func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "controller", "")
+		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "controller", "", context.Background())
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
@@ -63,16 +64,13 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 
 		applyNamespaceFilter(aggs, no.filterNamespace)
 
-		err = writeAggregationRateTable(
+		writeAggregationRateTable(
 			ko.Out,
 			aggs,
 			[]string{"namespace", "controller"},
 			controllerTitleExtractor,
 			no.displayOptions,
 		)
-		if err != nil {
-			return fmt.Errorf("failed to write table output: %s", err)
-		}
 	} else {
 		// Not supported because the allocation API does not return the namespace
 		// of controllers.
