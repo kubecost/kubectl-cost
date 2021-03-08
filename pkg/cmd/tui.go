@@ -17,10 +17,6 @@ import (
 	"github.com/spf13/cobra"
 )
 
-type tuiState struct {
-	do displayOptions
-}
-
 func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeO := NewKubeOptions(streams)
 
@@ -42,10 +38,41 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 	return cmd
 }
 
+// aggregationTableOptions is designed in order to encapsulate
+// the information necessary to display aggregation options
+// and update the aggregation from the TUI.
 type aggregationTableOptions struct {
 	aggregation    string
 	headers        []string
 	titleExtractor func(string) ([]string, error)
+}
+
+// this is the set of options that the TUI builds the aggregation
+// selection from
+var aggregationOptions = map[string]aggregationTableOptions{
+	"namespace": {
+		headers:        []string{"Namespace"},
+		titleExtractor: noopTitleExtractor,
+	},
+	"deployment": {
+		headers:        []string{"Namespace", "Deployment"},
+		titleExtractor: deploymentTitleExtractor,
+	},
+	"controller": {
+		headers:        []string{"Namespace", "Controller"},
+		titleExtractor: controllerTitleExtractor,
+	},
+}
+
+// this is the set of options that the TUI builds the window
+// selection from
+var windowOptions = []string{
+	"1d",
+	"2d",
+	"3d",
+	"7d",
+	"14d",
+	"30d",
 }
 
 func populateDisplayOptionsList(displayOptionsList *tview.List, do *displayOptions, redrawTable func(), navigateTable func()) {
@@ -118,30 +145,6 @@ func buildWindowDropdown(windowIndex *int, requeryData func()) *tview.DropDown {
 	return windowDropdown
 }
 
-var aggregationOptions = map[string]aggregationTableOptions{
-	"namespace": {
-		headers:        []string{"Namespace"},
-		titleExtractor: noopTitleExtractor,
-	},
-	"deployment": {
-		headers:        []string{"Namespace", "Deployment"},
-		titleExtractor: deploymentTitleExtractor,
-	},
-	"controller": {
-		headers:        []string{"Namespace", "Controller"},
-		titleExtractor: controllerTitleExtractor,
-	},
-}
-
-var windowOptions = []string{
-	"1d",
-	"2d",
-	"3d",
-	"7d",
-	"14d",
-	"30d",
-}
-
 func runTUI(ko *KubeOptions, do displayOptions) error {
 	app := tview.NewApplication()
 
@@ -161,6 +164,11 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 	redrawTable := func() {
 		table.Clear()
 
+		// This is the magic. Because go-pretty supports rendering a table as CSV,
+		// we can re-use all the hard work from building the normal terminal output
+		// table here. This TUI library needs us to build tables from a 2D array.
+		// The CSV-rendered (string) go-pretty table, nicely sorted and everything,
+		// is parsed into a 2D array and then the TUI table is built from that.
 		tWriter := makeAggregationRateTable(aggs, aggregationOptions[aggregation].headers, aggregationOptions[aggregation].titleExtractor, do)
 		serializedTable := tWriter.RenderCSV()
 
@@ -174,10 +182,23 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 	}
 
 	requeryData := func() {
+		// This makes requerying data async, so as to not lock up the UI on
+		// large window queries. If a user selects a large window on a large
+		// cluster without this, they will think the UI has crashed when it
+		// is merely dealing with blocking IO, waiting on the kubecost API
+		// and prometheus to aggregate a huge amount of data.
+		//
+		// TODO: Display an indication to the user that a query is in progress
 		go func() {
+			// Cancel before the lock so that a previously started query
+			// crashes out. This should prevent selecting a huge window
+			// from blocking the user from selecting a different window
+			// before the query finishes.
+			queryCancel()
+
 			aggsMutex.Lock()
 			defer aggsMutex.Unlock()
-			queryCancel()
+
 			queryContext, queryCancel = context.WithCancel(context.Background())
 
 			aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, "kubecost-cost-analyzer", windowOptions[windowIndex], aggregation, "", queryContext)
@@ -195,6 +216,9 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 	displayOptionsList := tview.NewList()
 
+	// SetDoneFunc sets what happens when the user hits ESC
+	// or TAB (if not focused on the list). When finished
+	// navigating, we go back to the main options list.
 	navigate := func() {
 		app.SetFocus(table)
 		table.SetDoneFunc(func(key tcell.Key) {
@@ -206,6 +230,8 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 	aggregationDropdown := buildAggregateByDropdown(&aggregation, requeryData)
 	windowDropdown := buildWindowDropdown(&windowIndex, requeryData)
 
+	// The other DoneFuncs cycle between the options selections,
+	// which are the display list and the dropdowns.
 	displayOptionsList.SetDoneFunc(func() {
 		app.SetFocus(aggregationDropdown)
 	})
@@ -253,6 +279,8 @@ func setTableFromCSV(table *tview.Table, csvString string) error {
 	for rowNum, rowValue := range parsed {
 		for colNum, colValue := range rowValue {
 			cell := tview.NewTableCell(colValue)
+
+			// Make the header (first row) stand out
 			if rowNum == 0 {
 				cell = cell.SetTextColor(headerColor)
 			}
