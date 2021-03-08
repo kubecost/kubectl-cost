@@ -164,7 +164,10 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 		tWriter := makeAggregationRateTable(aggs, aggregationOptions[aggregation].headers, aggregationOptions[aggregation].titleExtractor, do)
 		serializedTable := tWriter.RenderCSV()
 
-		setTableFromCSV(table, serializedTable)
+		err := setTableFromCSV(table, serializedTable)
+		if err != nil {
+			log.Errorf("failed to set table from CSV: %s", err)
+		}
 
 		table.SetTitle(fmt.Sprintf(" %s Monthly Rate - Window %s - Updated %02d:%02d:%02d ", aggregation, windowOptions[windowIndex], lastUpdated.Hour(), lastUpdated.Minute(), lastUpdated.Second()))
 		table.SetBorder(true)
@@ -237,13 +240,12 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 	return nil
 }
 
-func setTableFromCSV(table *tview.Table, csvString string) {
+func setTableFromCSV(table *tview.Table, csvString string) error {
 	// make into a Reader so we can use Golang's CSV parsing
 	reader := csv.NewReader(strings.NewReader(csvString))
 	parsed, err := reader.ReadAll()
 	if err != nil {
-		// TODO: don't panic
-		panic(err)
+		return fmt.Errorf("failed to read CSV string: %s", err)
 	}
 
 	headerColor := tcell.ColorYellow
@@ -258,4 +260,6 @@ func setTableFromCSV(table *tview.Table, csvString string) {
 			table.SetCell(rowNum, colNum, cell)
 		}
 	}
+
+	return nil
 }
