@@ -1,8 +1,6 @@
 module github.com/kubecost/kubectl-cost
 
-go 1.15
-
-// replace github.com/kubecost/cost-model => ../cost-model
+go 1.16
 
 require (
 	github.com/davecgh/go-spew v1.1.1
