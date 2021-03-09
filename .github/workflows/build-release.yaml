@@ -17,6 +17,6 @@ jobs:
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
-          files: 'kubectl-cost-*'
+          files: 'cmd/kubectl-cost/kubectl-cost-*'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
