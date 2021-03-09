@@ -1,0 +1,22 @@
+name: Build release binaries for tag
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build-and-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Make release
+        run: |
+          make release
+
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: 'kubectl-cost-*'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
