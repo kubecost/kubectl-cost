@@ -14,6 +14,12 @@ As long as the binary is still named `kubectl-cost` and is somewhere in your `PA
 
 #### From Source
 
+The build process uses [govvv](https://github.com/ahmetb/govvv) to set info 
+for the `version` subcommand until there is
+[in-compiler support](https://github.com/golang/go/issues/37475)
+for getting version info. If you don't have `govvv` installed, you can always
+edit the Makefile to use `go` instead of `govvv`.
+
 Build:
 
 ``` sh
