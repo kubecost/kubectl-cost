@@ -70,12 +70,12 @@ kubectl cost deployment --window month -A
 
 Show the projected monthly rate for each deployment in the `kubecost` namespace based on the last 3 days of activity with CPU cost breakdown.
 ``` sh
-kubectl cost deployment --window 3d --show-cpu -N kubecost
+kubectl cost deployment --window 3d --show-cpu -n kubecost
 ```
 
 The same, but with a non-standard Kubecost deployment in the namespace `kubecost-staging` with the cost analyzer service called `kubecost-staging-cost-analyzer`.
 ``` sh
-kubectl cost deployment --window 3d --show-cpu -N kubecost -n kubecost-staging --service-name kubecost-staging-cost-analyzer
+kubectl cost deployment --window 3d --show-cpu -n kubecost -N kubecost-staging --service-name kubecost-staging-cost-analyzer
 ```
 
 
@@ -85,19 +85,20 @@ See `kubectl cost [subcommand] --help` for the full set of flags.
 
 The following flags modify the behavior of the subcommands:
 ```
-    --historical                 show the total cost during the window instead of the projected monthly rate based on the data in the window"
-    --show-cpu                   show data for CPU cost
-    --show-efficiency            show efficiency of cost alongside CPU and memory cost (default true)
-    --show-gpu                   show data for GPU cost
-    --show-memory                show data for memory cost
-    --show-network               show data for network cost
-    --show-pv                    show data for PV (physical volume) cost
-    --show-shared                show shared cost data
--A, --show-all-resources         Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.
-    --window string              the window of data to query (default "yesterday")
--N, --namespace-filter string    Limit results to only one namespace. Defaults to all namespaces.
-    --service-name string        The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
--n, --namespace string           If present, the namespace scope for this CLI request (i.e. the namespace that Kubecost is running in). (default "kubecost")
+    --historical                  show the total cost during the window instead of the projected monthly rate based on the data in the window"
+    --show-cpu                    show data for CPU cost
+    --show-efficiency             show efficiency of cost alongside CPU and memory cost (default true)
+    --show-gpu                    show data for GPU cost
+    --show-memory                 show data for memory cost
+    --show-network                show data for network cost
+    --show-pv                     show data for PV (physical volume) cost
+    --show-shared                 show shared cost data
+-A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network.
+    --window string               the window of data to query (default "yesterday")
+-N, --namespace-filter string     Limit results to only one namespace. Defaults to all namespaces.
+    --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
+-n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
+-N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
 ```
 
 
@@ -114,7 +115,6 @@ The following flags modify the behavior of the subcommands:
   -h, --help                           help for cost
       --insecure-skip-tls-verify       If true, the server's certificate will not be checked for validity. This will make your HTTPS connections insecure
       --kubeconfig string              Path to the kubeconfig file to use for CLI requests.
-  -n, --namespace string               If present, the namespace scope for this CLI request (i.e. the namespace that Kubecost is running in). (default "kubecost")
       --request-timeout string         The length of time to wait before giving up on a single server request. Non-zero values should contain a corresponding time unit (e.g. 1s, 2m, 3h). A value of zero means don't timeout requests. (default "0")
   -s, --server string                  The address and port of the Kubernetes API server
       --tls-server-name string         Server name to use for server certificate validation. If it is not provided, the hostname used to contact the server is used

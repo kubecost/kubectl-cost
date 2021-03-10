@@ -36,10 +36,10 @@ var (
     %[1]s cost deployment --window month -A
 
     # Show the projected monthly rate for each deployment in the "kubecost" namespace based on the last 3 days of activity with CPU cost breakdown.
-    %[1]s cost deployment --window 3d --show-cpu -N kubecost
+    %[1]s cost deployment --window 3d --show-cpu -n kubecost
 
     # The same, but with a non-standard Kubecost deployment in the namespace "kubecost-staging" with the cost analyzer service called "kubecost-staging-cost-analyzer".
-    %[1]s cost deployment --window 3d --show-cpu -N kubecost -n kubecost-staging --service-name kubecost-staging-cost-analyzer
+    %[1]s cost deployment --window 3d --show-cpu -n kubecost -N kubecost-staging --service-name kubecost-staging-cost-analyzer
 `
 
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
@@ -66,7 +66,9 @@ func NewKubeOptions(streams genericclioptions.IOStreams) *KubeOptions {
 	}
 }
 
-// NewCmdCost provides a cobra command wrapping CostOptions
+// NewCmdCost provides a cobra command that acts as a parent command
+// for all subcommands. It provides only basic usage information. See
+// common.go and the subcommands for the actual functionality.
 func NewCmdCost(
 	streams genericclioptions.IOStreams,
 	GitCommit string,
@@ -75,30 +77,15 @@ func NewCmdCost(
 	GitSummary string,
 	BuildDate string,
 ) *cobra.Command {
-	o := NewKubeOptions(streams)
-
 	cmd := &cobra.Command{
 		Use:          "cost",
 		Short:        "View cluster cost information.",
 		Example:      fmt.Sprintf(costExample, "kubectl"),
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
-			// if err := o.Complete(c, args); err != nil {
-			// 	return err
-			// }
-			// if err := o.Validate(); err != nil {
-			// 	return err
-			// }
-			// if err := o.Run(); err != nil {
-			// 	return err
-			// }
 			return fmt.Errorf("please use a subcommand")
-
-			// return nil
 		},
 	}
-
-	o.configFlags.AddFlags(cmd.Flags())
 
 	cmd.AddCommand(newCmdCostNamespace(streams))
 	cmd.AddCommand(newCmdCostDeployment(streams))

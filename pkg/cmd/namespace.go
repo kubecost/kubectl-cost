@@ -43,7 +43,7 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	addCostOptionsFlags(cmd, &namespaceO.CostOptions)
-	kubeO.configFlags.AddFlags(cmd.Flags())
+	addKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
