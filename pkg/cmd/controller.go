@@ -44,9 +44,9 @@ func newCmdCostController(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVarP(&controllerO.filterNamespace, "namespace-filter", "N", "", "Limit results to only one namespace. Defaults to all namespaces.")
+	cmd.Flags().StringVarP(&controllerO.filterNamespace, "namespace", "n", "", "Limit results to only one namespace. Defaults to all namespaces.")
 	addCostOptionsFlags(cmd, &controllerO.CostOptions)
-	kubeO.configFlags.AddFlags(cmd.Flags())
+	addKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }

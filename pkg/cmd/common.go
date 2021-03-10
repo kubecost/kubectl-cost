@@ -50,6 +50,28 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().StringVar(&options.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
 }
 
+// addKubeOptionsFlags sets up the cobra command with the flags from
+// KubeOptions' configFlags so that a kube client can be built to a
+// user's specification. Its one modification is to change the name
+// of the namespace flag to kubecost-namespace because we want to
+// "behave as expected", i.e. --namespace affects the request to the
+// kubecost API, not the request to the k8s API.
+func addKubeOptionsFlags(cmd *cobra.Command, ko *KubeOptions) {
+	// By setting Namespace to nil, AddFlags won't create
+	// the --namespace flag, which we want to use for scoping
+	// kubecost requests (for some subcommands). We can then
+	// create a differently-named flag for the same variable.
+	ko.configFlags.Namespace = nil
+	ko.configFlags.AddFlags(cmd.Flags())
+
+	// Reset Namespace to a valid string to avoid a nil pointer
+	// deref.
+	emptyStr := ""
+	ko.configFlags.Namespace = &emptyStr
+
+	cmd.Flags().StringVarP(ko.configFlags.Namespace, "kubecost-namespace", "N", "kubecost", "The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace.")
+}
+
 func (co *CostOptions) Complete() {
 	if co.showAll {
 		co.showCPUCost = true

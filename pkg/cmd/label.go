@@ -51,8 +51,9 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 
 	cmd.Flags().StringVarP(&labelO.queryLabel, "label", "l", "", "The label to perform aggregation on, \"app\" is a common one.")
 	cmd.MarkFlagRequired("label")
+
 	addCostOptionsFlags(cmd, &labelO.CostOptions)
-	kubeO.configFlags.AddFlags(cmd.Flags())
+	addKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
