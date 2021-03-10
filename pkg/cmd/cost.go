@@ -67,7 +67,14 @@ func NewKubeOptions(streams genericclioptions.IOStreams) *KubeOptions {
 }
 
 // NewCmdCost provides a cobra command wrapping CostOptions
-func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
+func NewCmdCost(
+	streams genericclioptions.IOStreams,
+	GitCommit string,
+	GitBranch string,
+	GitState string,
+	GitSummary string,
+	BuildDate string,
+) *cobra.Command {
 	o := NewKubeOptions(streams)
 
 	cmd := &cobra.Command{
@@ -98,6 +105,7 @@ func NewCmdCost(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.AddCommand(newCmdCostController(streams))
 	cmd.AddCommand(newCmdCostLabel(streams))
 	cmd.AddCommand(newCmdTUI(streams))
+	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
 
 	return cmd
 }
