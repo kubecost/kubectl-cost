@@ -43,39 +43,63 @@ The exception to these descriptions is `kubectl cost tui`, which displays a TUI 
 
 
 #### Examples
-Show the projected monthly rate for each namespace based on the last 5 days of activity.
+Show the projected monthly rate for each namespace
+based on the last 5 days of activity.
 ``` sh
 kubectl cost namespace --window 5d
 ```
 
-Show how much each namespace cost over the past 5 days with additional CPU and memory cost and without efficiency.
+Show how much each namespace cost over the past 5 days
+with additional CPU and memory cost and without efficiency.
 ``` sh
-kubectl cost namespace --historical --window 5d --show-cpu --show-memory --show-efficiency=false
+kubectl cost namespace \
+  --historical \
+  --window 5d \
+  --show-cpu \
+  --show-memory \
+  --show-efficiency=false
 ```
 
-Show the projected monthly rate for each controller based on the last 5 days of activity with PV (persistent volume) cost breakdown.
+Show the projected monthly rate for each controller
+based on the last 5 days of activity with PV (persistent
+volume) cost breakdown.
 ``` sh
 kubectl cost controller --window 5d --show-pv
 ```
 
-Show costs over the past 5 days broken down by the value of the `app` label:
+Show costs over the past 5 days broken down by the value
+of the `app` label:
 ``` sh
 kubectl cost label --historical -l app
 ```
 
-Show the projected monthly rate for each deployment based on the last month of activity with CPU, memory, GPU, PV, and network cost breakdown.
+Show the projected monthly rate for each deployment
+based on the last month of activity with CPU, memory,
+GPU, PV, and network cost breakdown.
 ``` sh
 kubectl cost deployment --window month -A
 ```
 
-Show the projected monthly rate for each deployment in the `kubecost` namespace based on the last 3 days of activity with CPU cost breakdown.
+Show the projected monthly rate for each deployment
+in the `kubecost` namespace based on the last 3 days
+of activity with CPU cost breakdown.
 ``` sh
-kubectl cost deployment --window 3d --show-cpu -n kubecost
+kubectl cost deployment \
+  --window 3d \
+  --show-cpu \
+  -n kubecost
 ```
 
-The same, but with a non-standard Kubecost deployment in the namespace `kubecost-staging` with the cost analyzer service called `kubecost-staging-cost-analyzer`.
+The same, but with a non-standard Kubecost deployment
+in the namespace `kubecost-staging` with the cost
+analyzer service called `kubecost-staging-cost-analyzer`.
 ``` sh
-kubectl cost deployment --window 3d --show-cpu -n kubecost -N kubecost-staging --service-name kubecost-staging-cost-analyzer
+kubectl cost deployment \
+  --window 3d \
+  --show-cpu \
+  -n kubecost \
+  -N kubecost-staging \
+  --service-name kubecost-staging-cost-analyzer
 ```
 
 
