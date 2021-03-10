@@ -203,7 +203,10 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 			aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, "kubecost-cost-analyzer", windowOptions[windowIndex], aggregation, "", queryContext)
 
-			if err != nil {
+			if err != nil && strings.Contains(err.Error(), "context canceled") {
+				// do nothing, because the context got canceled to favor a more
+				// recent window request from the user
+			} else if err != nil {
 				log.Errorf("failed to query agg cost model: %s", err)
 			} else {
 				lastUpdated = time.Now()
