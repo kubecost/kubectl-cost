@@ -13,6 +13,10 @@ binary=$1
 # a cluster with kubecost is configured as the current
 # kube context on the machine this script runs on, hence
 # it is an integration test.
+#
+# WARNING: the nightly cluster does not have a staging install
+# so tests that use -N and/or --service-name should be changed.
+ 
 
 # Show the projected monthly rate for each namespace
 # based on the last 5 days of activity.
@@ -52,9 +56,12 @@ $binary deployment \
 # The same, but with a non-standard Kubecost deployment
 # in the namespace "kubecost-staging" with the cost
 # analyzer service called "kubecost-staging-cost-analyzer".
+# 
+# WARNING: modified from usage examles because test cluster
+# doesn't have a staging install
 $binary deployment \
   --window 3d \
   --show-cpu \
   -n kubecost \
-  -N kubecost-staging \
-  --service-name kubecost-staging-cost-analyzer
+  -N kubecost \
+  --service-name kubecost-cost-analyzer
