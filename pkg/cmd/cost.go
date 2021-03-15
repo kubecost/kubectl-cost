@@ -5,14 +5,10 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes"
-	_ "k8s.io/client-go/plugin/pkg/client/auth/gcp"
+	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
-	// "k8s.io/client-go/tools/clientcmd"
-	// "k8s.io/client-go/tools/clientcmd/api"
-
 	"github.com/spf13/cobra"
-	// "github.com/kubecost/cost-model/pkg/kubecost"
 )
 
 // Note that the auth/gcp import is necessary https://github.com/kubernetes/client-go/issues/242
