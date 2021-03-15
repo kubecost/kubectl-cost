@@ -132,13 +132,6 @@ func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
 		return err
 	}
 
-	if *o.configFlags.Namespace == "" {
-		// Don't log here, as this is expected behavior. This is hard to communicate
-		// in the --help output because the --namespace flag is set up by
-		// genericclioptions.
-		*o.configFlags.Namespace = "kubecost"
-	}
-
 	o.clientset, err = kubernetes.NewForConfig(o.restConfig)
 	if err != nil {
 		return fmt.Errorf("failed to create clientset: %s", err)
