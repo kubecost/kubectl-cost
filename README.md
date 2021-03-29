@@ -12,9 +12,20 @@
 
 > This software requires that you have a running deployment of [Kubecost](https://kubecost.com/) in your cluster. 
 
+
+#### Linux/MacOS
+
+``` sh
+os=$(uname | tr '[:upper:]' '[:lower:]') && \
+arch=$(uname -m | tr '[:upper:]' '[:lower:]' | sed -e s/x86_64/amd64/) && \
+curl -s -L https://github.com/kubecost/kubectl-cost/releases/latest/download/kubectl-cost-$os-$arch.tar.gz | tar xz -C /tmp && \
+sudo mv /tmp/kubectl-cost /usr/local/bin/kubectl-cost
+```
+
+
 #### Latest Release
 
-Go the the [releases](https://github.com/kubecost/kubectl-cost/releases) and download the appropriate binary for your system. Rename it to `kubectl-cost` and put it in your `PATH`. 
+If you prefer to download from GitHub, or are on Windows, go the the [releases](https://github.com/kubecost/kubectl-cost/releases) and download the appropriate binary for your system. Rename it to `kubectl-cost` and put it in your `PATH`.
 
 As long as the binary is still named `kubectl-cost` and is somewhere in your `PATH`, it will be usable. This is because `kubectl` automatically finds plugins by looking for executables prefixed with `kubecost-` in your `PATH`.
 
