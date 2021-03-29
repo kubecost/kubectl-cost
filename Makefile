@@ -32,6 +32,10 @@ windows-amd64:
 
 .PHONY: release
 release: darwin-amd64 darwin-arm64 linux-amd64 windows-amd64
+	sha256sum cmd/kubectl-cost/kubectl-cost-darwin-amd64.tar.gz
+	sha256sum cmd/kubectl-cost/kubectl-cost-darwin-arm64.tar.gz
+	sha256sum cmd/kubectl-cost/kubectl-cost-linux-amd64.tar.gz
+	sha256sum cmd/kubectl-cost/kubectl-cost-windows-amd64.tar.gz
 
 .PHONY: build
 build:
