@@ -29,29 +29,6 @@ If you prefer to download from GitHub, or are on Windows, go the the [releases](
 
 As long as the binary is still named `kubectl-cost` and is somewhere in your `PATH`, it will be usable. This is because `kubectl` automatically finds plugins by looking for executables prefixed with `kubecost-` in your `PATH`.
 
-#### From Source
-
-The build process uses [govvv](https://github.com/ahmetb/govvv) to set info 
-for the `version` subcommand until there is
-[in-compiler support](https://github.com/golang/go/issues/37475)
-for getting version info. If you don't have `govvv` installed, you can always
-edit the Makefile to use `go` instead of `govvv`.
-
-Build:
-
-``` sh
-make build
-```
-
-Install:
-
-``` sh
-chmod +x cmd/kubectl-cost
-cp cmd/kubectl-cost /somewhere/in/your/PATH/kubectl-cost
-```
-
-As long as the binary is still named `kubectl-cost` and is somewhere in your `PATH`, it will be usable.
-
 ## Usage
 
 There are five supported subcommands: `namespace`, `deployment`, `controller`, `label`, and `tui`, which display cost information aggregated by the name of the subcommand (see Examples). Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
