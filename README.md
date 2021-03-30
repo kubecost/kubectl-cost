@@ -139,3 +139,7 @@ The following flags modify the behavior of the subcommands:
       --user string                    The name of the kubeconfig user to use
 ```
 
+## Requirements
+A cluster running Kubernetes version 1.8 or higher
+
+Have questions? Join our [Slack community](https://join.slack.com/t/kubecost/shared_invite/enQtNTA2MjQ1NDUyODE5LWFjYzIzNWE4MDkzMmUyZGU4NjkwMzMyMjIyM2E0NGNmYjExZjBiNjk1YzY5ZDI0ZTNhZDg4NjlkMGRkYzFlZTU) or contact us via email at [team@kubecost.com](team@kubecost.com)!
