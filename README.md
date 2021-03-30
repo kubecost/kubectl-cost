@@ -29,7 +29,7 @@
 
     As long as the binary is still named `kubectl-cost` and is somewhere in your `PATH`, it will be usable. This is because `kubectl` automatically finds plugins by looking for executables prefixed with `kubecost-` in your `PATH`.
 
-   Altnertively, you can view [DEVELOPMENT.md](DEVELOPMENT.md) if you would like to build from source.
+   Alternatively, you can view [DEVELOPMENT.md](DEVELOPMENT.md) if you would like to build from source.
 
 ## Usage
 
