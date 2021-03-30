@@ -25,7 +25,7 @@
 
     #### Latest Release
 
-    If you prefer to download from GitHub, or are on Windows, go the the [releases](https://github.com/kubecost/kubectl-cost/releases) and download the appropriate     binary for your system. Rename it to `kubectl-cost` and put it in your `PATH`.
+    If you prefer to download from GitHub, or are on Windows, go to the [releases page](https://github.com/kubecost/kubectl-cost/releases) and download the appropriate binary for your system. Rename it to `kubectl-cost` and put it in your `PATH`.
 
     As long as the binary is still named `kubectl-cost` and is somewhere in your `PATH`, it will be usable. This is because `kubectl` automatically finds plugins by looking for executables prefixed with `kubectl-` in your `PATH`.
 
