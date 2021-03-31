@@ -35,6 +35,8 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
+	addKubeOptionsFlags(cmd, kubeO)
+
 	return cmd
 }
 
