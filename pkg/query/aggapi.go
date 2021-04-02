@@ -23,6 +23,7 @@ func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, servi
 		"window":      window,
 		"aggregation": aggregate,
 		"rate":        "monthly",
+		"etl":         "true",
 	}
 
 	if aggregationSubfield != "" {
