@@ -14,6 +14,14 @@
 
 2. Install kubectl cost
 
+    #### Krew
+    If you have [Krew](https://krew.sigs.k8s.io/), the `kubectl` plugin manager, installed:
+    ``` sh
+    kubectl krew install cost
+    ```
+
+    The manifest can be found [here](https://github.com/kubernetes-sigs/krew-index/blob/master/plugins/cost.yaml)
+
     #### Linux/MacOS
 
     ``` sh
