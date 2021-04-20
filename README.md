@@ -166,6 +166,14 @@ The following flags modify the behavior of the subcommands:
       --user string                    The name of the kubeconfig user to use
 ```
 
+## Implementation Quirks
+
+In order to provide a seamless experience for standard Kubernetes configurations, `kubectl-cost` talks to the Kubernetes API server based on your Kubeconfig and uses the API server to proxy a request to the Kubecost API. If you get an error like `failed to proxy get kubecost`, there is something going wrong with this behavior.
+
+- There may be an underlying problem with your Kubecost install, try `kubectl port-forward`ing the `kubecost-cost-analyzer` service, port 9090, and querying [one of our APIs](https://github.com/kubecost/docs/blob/master/apis.md).
+- Your problem could be a security configuration that is preventing the API server communicating with certain namespaces or proxying requests in general.
+- If you're still having problems, hit us up on Slack (see below) or open an issue on this repo.
+
 ## Requirements
 A cluster running Kubernetes version 1.8 or higher
 
