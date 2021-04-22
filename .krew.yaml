@@ -21,7 +21,7 @@ spec:
   homepage: https://github.com/kubecost/kubectl-cost
   platforms:
   - bin: kubectl-cost
-    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-{{ .TagName }}-darwin-amd64.tar.gz" .TagName }}
+    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-darwin-amd64.tar.gz" .TagName }}
     bin: kubectl-cost
     files:
     - from: kubectl-cost
@@ -33,7 +33,7 @@ spec:
         os: darwin
         arch: amd64
   - bin: kubectl-cost
-    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-{{ .TagName }}-darwin-arm64.tar.gz" .TagName }}
+    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-darwin-arm64.tar.gz" .TagName }}
     files:
     - from: kubectl-cost
       to: .
@@ -44,7 +44,7 @@ spec:
         os: darwin
         arch: arm64
   - bin: kubectl-cost
-    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-{{ .TagName }}-linux-amd64.tar.gz" .TagName }}
+    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-linux-amd64.tar.gz" .TagName }}
     files:
     - from: kubectl-cost
       to: .
@@ -55,7 +55,7 @@ spec:
         os: linux
         arch: amd64
   - bin: kubectl-cost.exe
-    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-{{ .TagName }}-windows-amd64.tar.gz" .TagName }}
+    {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-windows-amd64.tar.gz" .TagName }}
     files:
     - from: kubectl-cost
       to: kubectl-cost.exe
