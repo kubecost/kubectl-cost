@@ -30,3 +30,8 @@ jobs:
           files: 'cmd/kubectl-cost/kubectl-cost-*'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update version in Krew index
+        uses: rajatjindal/krew-release-bot@v0.0.38
+        # see https://github.com/rajatjindal/krew-release-bot
+        # and /.krew.yaml
