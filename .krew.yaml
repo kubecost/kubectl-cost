@@ -22,7 +22,6 @@ spec:
   platforms:
   - bin: kubectl-cost
     {{ addURIAndSha "https://github.com/kubecost/kubectl-cost/releases/download/{{ .TagName }}/kubectl-cost-darwin-amd64.tar.gz" .TagName }}
-    bin: kubectl-cost
     files:
     - from: kubectl-cost
       to: .
