@@ -29,4 +29,5 @@ As long as the binary is still named `kubectl-cost` and is somewhere in your `PA
 
 Tag from `main` with a valid SemVer version (e.g. `v0.2.0`) that is after the most recent release. There is a [GitHub Actions workflow](https://github.com/kubecost/kubectl-cost/blob/v0.1.3/.github/workflows/build-release.yaml) that handles building and publishing release binaries and archives to a GitHub release. It will be triggered automatically by any tag pushed that is prefixed with `v`.
 
-Once the release completes, the [Krew manifest](https://github.com/kubernetes-sigs/krew-index/pull/1158) should be updated with the latest version and checksums. The release workflow conveniently also outputs the checksums needed for this update during the build step.
+Once the release completes, the [Krew manifest](https://github.com/kubernetes-sigs/krew-index/pull/1158) should be automatically updated in the same workflow using [krew-release-bot](https://github.com/rajatjindal/krew-release-bot). Make sure this succeeds - the PR to krew-index should be merged automatically.
+
