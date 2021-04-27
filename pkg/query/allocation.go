@@ -89,7 +89,7 @@ func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, service
 	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/allocation", params).DoRaw(ctx)
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to proxy get kubecost: %s", err)
+		return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 	}
 
 	var ar allocationResponse
