@@ -60,6 +60,11 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 
+	currencyCode, err := query.QueryCurrencyCode(ko.clientset, *ko.configFlags.Namespace, no.serviceName, context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get currency code: %s", err)
+	}
+
 	if !no.isHistorical {
 		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "label", no.queryLabel, context.Background())
 		if err != nil {
@@ -75,6 +80,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 			[]string{"label"},
 			noopTitleExtractor,
 			no.displayOptions,
+			currencyCode,
 		)
 	} else {
 		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, fmt.Sprintf("label:%s", no.queryLabel), context.Background())
@@ -83,7 +89,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
-		writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions)
+		writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions, currencyCode)
 	}
 
 	return nil

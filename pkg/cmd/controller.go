@@ -53,6 +53,11 @@ func newCmdCostController(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 
+	currencyCode, err := query.QueryCurrencyCode(ko.clientset, *ko.configFlags.Namespace, no.serviceName, context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get currency code: %s", err)
+	}
+
 	if !no.isHistorical {
 		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "controller", "", context.Background())
 		if err != nil {
@@ -70,6 +75,7 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 			[]string{"namespace", "controller"},
 			controllerTitleExtractor,
 			no.displayOptions,
+			currencyCode,
 		)
 	} else {
 		// Not supported because the allocation API does not return the namespace
