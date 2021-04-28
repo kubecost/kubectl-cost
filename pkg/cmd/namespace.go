@@ -50,6 +50,11 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 
+	currencyCode, err := query.QueryCurrencyCode(ko.clientset, *ko.configFlags.Namespace, no.serviceName, context.Background())
+	if err != nil {
+		return fmt.Errorf("failed to get currency code: %s", err)
+	}
+
 	if !no.isHistorical {
 		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", "", context.Background())
 		if err != nil {
@@ -62,6 +67,7 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 			[]string{"namespace"},
 			noopTitleExtractor,
 			no.displayOptions,
+			currencyCode,
 		)
 	} else {
 		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", context.Background())
@@ -70,7 +76,7 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
-		writeAllocationTable(ko.Out, "Namespace", allocations[0], no.displayOptions)
+		writeAllocationTable(ko.Out, "Namespace", allocations[0], no.displayOptions, currencyCode)
 	}
 
 	return nil

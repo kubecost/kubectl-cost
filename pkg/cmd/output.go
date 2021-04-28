@@ -27,14 +27,14 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions) {
-	t := makeAllocationTable(allocationType, allocations, opts)
+func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string) {
+	t := makeAllocationTable(allocationType, allocations, opts, currencyCode)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions) table.Writer {
+func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -242,7 +242,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		footerRow = append(footerRow, formatFloat(summedShared))
 	}
 
-	footerRow = append(footerRow, formatFloat(summedCost))
+	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
 
 	t.AppendFooter(footerRow)
 
@@ -260,7 +260,7 @@ func deploymentTitleExtractor(aggregationName string) ([]string, error) {
 }
 
 // see the results of /model/aggregatedCostModel?window=1d&aggregation=controller
-// format is namespace/controller (e.g. kubecost/deployment:kubecost-cost-analyzer)
+
 func controllerTitleExtractor(aggregationName string) ([]string, error) {
 	sp := strings.Split(aggregationName, "/")
 
@@ -275,14 +275,14 @@ func noopTitleExtractor(aggregationName string) ([]string, error) {
 	return []string{aggregationName}, nil
 }
 
-func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) {
-	t := makeAggregationRateTable(aggs, rowTitles, rowTitleExtractor, opts)
+func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions, currencyCode string) {
+	t := makeAggregationRateTable(aggs, rowTitles, rowTitleExtractor, opts, currencyCode)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions) table.Writer {
+func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions, currencyCode string) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -519,7 +519,7 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 		footerRow = append(footerRow, formatFloat(summedShared))
 	}
 
-	footerRow = append(footerRow, formatFloat(summedCost))
+	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
 
 	t.AppendFooter(footerRow)
 
