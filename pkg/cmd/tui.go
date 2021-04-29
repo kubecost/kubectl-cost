@@ -64,6 +64,10 @@ var aggregationOptions = map[string]aggregationTableOptions{
 		headers:        []string{"Namespace", "Controller"},
 		titleExtractor: controllerTitleExtractor,
 	},
+	"pod": {
+		headers:        []string{"Namespace", "Pod"},
+		titleExtractor: podTitleExtractor,
+	},
 }
 
 // this is the set of options that the TUI builds the window
