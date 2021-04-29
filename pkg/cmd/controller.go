@@ -78,9 +78,15 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 			currencyCode,
 		)
 	} else {
-		// Not supported because the allocation API does not return the namespace
-		// of controllers.
-		return fmt.Errorf("kubectl cost controller does not yet support historical queries")
+		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "controller", context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to query allocation API: %s", err)
+		}
+
+		// Use allocations[0] because the query accumulates to a single result
+		applyNamespaceFilterAllocation(allocations[0], no.filterNamespace)
+
+		writeAllocationTable(ko.Out, "Controller", allocations[0], no.displayOptions, currencyCode, true)
 	}
 
 	return nil

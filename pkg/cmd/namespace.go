@@ -76,7 +76,7 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
-		writeAllocationTable(ko.Out, "Namespace", allocations[0], no.displayOptions, currencyCode)
+		writeAllocationTable(ko.Out, "Namespace", allocations[0], no.displayOptions, currencyCode, false)
 	}
 
 	return nil
