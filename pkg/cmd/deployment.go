@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kubecost/cost-model/pkg/kubecost"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
@@ -80,8 +81,15 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 			currencyCode,
 		)
 	} else {
-		// Not supported because the allocation API does not return deployment names.
-		return fmt.Errorf("kubectl cost deployment does not yet support historical queries")
+		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to query allocation API: %s", err)
+		}
+
+		// Use allocations[0] because the query accumulates to a single result
+		applyNamespaceFilterAllocation(allocations[0], no.filterNamespace)
+
+		writeAllocationTable(ko.Out, "Deployment", allocations[0], no.displayOptions, currencyCode, true)
 	}
 
 	return nil
@@ -108,4 +116,17 @@ func applyNamespaceFilter(aggData map[string]query.Aggregation, namespaceFilter 
 	}
 
 	return
+}
+
+func applyNamespaceFilterAllocation(allocData map[string]kubecost.Allocation, namespaceFilter string) {
+	if namespaceFilter == "" {
+		return
+	}
+
+	for allocName, alloc := range allocData {
+		ns, _ := alloc.Properties.GetNamespace()
+		if ns != namespaceFilter {
+			delete(allocData, allocName)
+		}
+	}
 }

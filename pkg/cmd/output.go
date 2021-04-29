@@ -13,6 +13,8 @@ import (
 )
 
 const (
+	ClusterCol          = "Cluster"
+	NamespaceCol        = "Namespace"
 	CPUCol              = "CPU"
 	CPUEfficiencyCol    = "CPU Eff."
 	MemoryCol           = "Memory"
@@ -27,22 +29,28 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string) {
-	t := makeAllocationTable(allocationType, allocations, opts, currencyCode)
+func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool) {
+	t := makeAllocationTable(allocationType, allocations, opts, currencyCode, showNamespace)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string) table.Writer {
+func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
 
 	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:      "cluster",
+		Name:      ClusterCol,
 		AutoMerge: true,
 	})
+	if showNamespace {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:      NamespaceCol,
+			AutoMerge: true,
+		})
+	}
 	columnConfigs = append(columnConfigs, table.ColumnConfig{
 		Name:      allocationType,
 		AutoMerge: true,
@@ -104,7 +112,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 
 	headerRow := table.Row{}
 
-	headerRow = append(headerRow, "Cluster")
+	headerRow = append(headerRow, ClusterCol)
+	if showNamespace {
+		headerRow = append(headerRow, NamespaceCol)
+	}
 	headerRow = append(headerRow, allocationType)
 
 	if opts.showCPUCost {
@@ -162,6 +173,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		allocRow := table.Row{}
 
 		allocRow = append(allocRow, cluster)
+		if showNamespace {
+			ns, _ := alloc.Properties.GetNamespace()
+			allocRow = append(allocRow, ns)
+		}
 		allocRow = append(allocRow, allocName)
 
 		if opts.showCPUCost {
@@ -210,6 +225,9 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	footerRow := table.Row{}
 
 	footerRow = append(footerRow, "SUMMED")
+	if showNamespace {
+		footerRow = append(footerRow, "")
+	}
 	footerRow = append(footerRow, "")
 
 	if opts.showCPUCost {
