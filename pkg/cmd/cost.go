@@ -60,6 +60,14 @@ var (
       -n kubecost \
       -N kubecost-staging \
       --service-name kubecost-staging-cost-analyzer
+
+    # Show how much each pod in the "kube-system" namespace
+    # cost yesterday, including CPU-specific cost.
+    %[1]s cost pod \
+      --historical \
+      --window yesterday \
+      --show-cpu \
+      -n kube-system
 `
 
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
@@ -115,6 +123,7 @@ func NewCmdCost(
 	cmd.AddCommand(newCmdCostDeployment(streams))
 	cmd.AddCommand(newCmdCostController(streams))
 	cmd.AddCommand(newCmdCostLabel(streams))
+	cmd.AddCommand(newCmdCostPod(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
 

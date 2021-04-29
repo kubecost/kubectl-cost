@@ -283,7 +283,17 @@ func controllerTitleExtractor(aggregationName string) ([]string, error) {
 	sp := strings.Split(aggregationName, "/")
 
 	if len(sp) != 2 {
-		return nil, fmt.Errorf("deployment title should have 2 fields")
+		return nil, fmt.Errorf("controller title should have 2 fields")
+	}
+
+	return sp, nil
+}
+
+func podTitleExtractor(aggregationName string) ([]string, error) {
+	sp := strings.Split(aggregationName, "/")
+
+	if len(sp) != 2 {
+		return nil, fmt.Errorf("pod title should have 2 fields")
 	}
 
 	return sp, nil

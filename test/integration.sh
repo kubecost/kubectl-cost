@@ -65,3 +65,12 @@ $binary deployment \
   -n kubecost \
   -N kubecost \
   --service-name kubecost-cost-analyzer
+
+
+# Show how much each pod in the "kube-system" namespace
+# cost yesterday, including CPU-specific cost.
+$binary cost pod \
+  --historical \
+  --window yesterday \
+  --show-cpu \
+  -n kube-system
