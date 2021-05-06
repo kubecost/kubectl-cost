@@ -62,9 +62,19 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 	}
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", "", context.Background())
-		if err != nil {
-			return fmt.Errorf("failed to query agg cost model: %s", err)
+		var aggs map[string]query.Aggregation
+		var err error
+
+		if no.useProxy {
+			aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", "", context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to query agg cost model: %s", err)
+			}
+		} else {
+			aggs, err = query.QueryAggCostModelFwd(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", "", context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to query agg cost model: %s", err)
+			}
 		}
 
 		// don't show unallocated deployment data
@@ -81,9 +91,18 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 			currencyCode,
 		)
 	} else {
-		allocations, err := query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", context.Background())
-		if err != nil {
-			return fmt.Errorf("failed to query allocation API: %s", err)
+		var allocations []map[string]kubecost.Allocation
+		var err error
+		if no.useProxy {
+			allocations, err = query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to query allocation API: %s", err)
+			}
+		} else {
+			allocations, err = query.QueryAllocationFwd(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "deployment", context.Background())
+			if err != nil {
+				return fmt.Errorf("failed to query allocation API: %s", err)
+			}
 		}
 
 		// Use allocations[0] because the query accumulates to a single result

@@ -152,6 +152,7 @@ The following flags modify the behavior of the subcommands:
     --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
 -n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
 -N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
+    --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
 ```
 
 
@@ -177,8 +178,24 @@ The following flags modify the behavior of the subcommands:
 
 ## Implementation Quirks
 
-In order to provide a seamless experience for standard Kubernetes configurations, `kubectl-cost` talks to the Kubernetes API server based on your Kubeconfig and uses the API server to proxy a request to the Kubecost API. If you get an error like `failed to proxy get kubecost`, there is something going wrong with this behavior.
+In order to provide a seamless experience for standard Kubernetes configurations, `kubectl-cost` temporariliy forwards a port on your system to a Kubecost pod and uses that port to proxy a request. The port will only be bound to `localhost` and will only be open for the duration of the API request.
 
+If you don't want a port to be temporarily forwarded, there is legacy behavior exposed with the flag `--use-proxy` that will instead use the Kubernetes API server to proxy a request to Kubecost. This behavior has its own pitfalls, especially with security policies that would prevent the API server from communicating with services. If you'd like to test this behavior, to make sure it will work with your cluster:
+
+``` sh
+kubectl proxy --port 8080
+
+```
+
+``` sh
+curl -G 'http://localhost:8080/api/v1/namespaces/kubecost/services/kubecost-cost-analyzer:tcp-model/proxy/getConfigs'
+```
+
+> If you are running an old version of Kubecost, you may have to replace `tcp-model` with `model`
+
+If that `curl` succeeds, `--use-proxy` should work for you.
+
+Otherwise:
 - There may be an underlying problem with your Kubecost install, try `kubectl port-forward`ing the `kubecost-cost-analyzer` service, port 9090, and querying [one of our APIs](https://github.com/kubecost/docs/blob/master/apis.md).
 - Your problem could be a security configuration that is preventing the API server communicating with certain namespaces or proxying requests in general.
 - If you're still having problems, hit us up on Slack (see below) or open an issue on this repo.

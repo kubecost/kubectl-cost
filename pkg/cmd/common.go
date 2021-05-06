@@ -11,6 +11,10 @@ import (
 // CostOptions holds common options for querying and displaying
 // data from the kubecost API
 type CostOptions struct {
+	// If set, will proxy a request through the K8s API server
+	// instead of port forwarding.
+	useProxy bool
+
 	window string
 
 	isHistorical bool
@@ -48,6 +52,7 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().BoolVar(&options.showEfficiency, "show-efficiency", true, "show efficiency of cost alongside CPU and memory cost")
 	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency.")
 	cmd.Flags().StringVar(&options.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
+	cmd.Flags().BoolVar(&options.useProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
 }
 
 // addKubeOptionsFlags sets up the cobra command with the flags from
