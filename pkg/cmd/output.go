@@ -108,6 +108,14 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		AlignFooter: text.AlignRight,
 	})
 
+	if opts.showEfficiency {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Total Efficiency",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+
 	t.SetColumnConfigs(columnConfigs)
 
 	headerRow := table.Row{}
@@ -149,6 +157,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	}
 
 	headerRow = append(headerRow, "Total Cost (All)")
+
+	if opts.showEfficiency {
+		headerRow = append(headerRow, "Total Efficiency")
+	}
 
 	t.AppendHeader(headerRow)
 	t.SortBy([]table.SortBy{
@@ -218,6 +230,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		cumulativeCost := formatFloat(alloc.TotalCost)
 		allocRow = append(allocRow, cumulativeCost)
 
+		if opts.showEfficiency {
+			allocRow = append(allocRow, formatFloat(alloc.TotalEfficiency))
+		}
+
 		t.AppendRow(allocRow)
 		summedCost += alloc.TotalCost
 	}
@@ -261,6 +277,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	}
 
 	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
+
+	if opts.showEfficiency {
+		footerRow = append(footerRow, "")
+	}
 
 	t.AppendFooter(footerRow)
 
@@ -377,6 +397,14 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 		AlignFooter: text.AlignRight,
 	})
 
+	if opts.showEfficiency {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Monthly Efficiency",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+
 	t.SetColumnConfigs(columnConfigs)
 
 	// t.SetColumnConfigs([]table.ColumnConfig{
@@ -432,6 +460,10 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 	}
 
 	headerRow = append(headerRow, "Monthly Rate (All)")
+
+	if opts.showEfficiency {
+		headerRow = append(headerRow, "Monthly Efficiency")
+	}
 
 	t.AppendHeader(headerRow)
 
@@ -505,6 +537,10 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 		cumulativeCost := formatFloat(agg.TotalCost)
 		agRow = append(agRow, cumulativeCost)
 
+		if opts.showEfficiency {
+			agRow = append(agRow, formatFloat(agg.Efficiency))
+		}
+
 		t.AppendRow(agRow)
 		summedCost += agg.TotalCost
 	}
@@ -548,6 +584,10 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 	}
 
 	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
+
+	if opts.showEfficiency {
+		footerRow = append(footerRow, "")
+	}
 
 	t.AppendFooter(footerRow)
 
