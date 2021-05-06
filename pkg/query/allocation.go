@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/rest"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
 )
@@ -72,6 +73,8 @@ type allocationResponse struct {
 	Data []map[string]kubecost.Allocation `json:"data"`
 }
 
+// QueryAllocation queries /model/allocation by proxying a request to Kubecost
+// through the Kubernetes API server.
 func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string, ctx context.Context) ([]map[string]kubecost.Allocation, error) {
 
 	params := map[string]string{
@@ -94,6 +97,35 @@ func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, service
 
 	var ar allocationResponse
 	err = json.Unmarshal(bytes, &ar)
+	if err != nil {
+		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+	}
+
+	return ar.Data, nil
+}
+
+// QueryAllocationFwd queries /model/allocation by temporarily port-forwarding to
+// a Kubecost pod and executing a request against the forwarded port.
+func QueryAllocationFwd(restConfig *rest.Config, kubecostNamespace, serviceName, window, aggregate string, ctx context.Context) ([]map[string]kubecost.Allocation, error) {
+	params := map[string]string{
+		// if we set this to false, output would be
+		// per-day (we could use it in a more
+		// complicated way to build in-terminal charts)
+		"accumulate": "true",
+		"window":     window,
+	}
+
+	if aggregate != "" {
+		params["aggregate"] = aggregate
+	}
+
+	data, err := portForwardedQueryService(restConfig, kubecostNamespace, serviceName, "model/allocation", params, ctx)
+	if err != nil {
+		return nil, fmt.Errorf("failed to port forward query: %s", err)
+	}
+
+	var ar allocationResponse
+	err = json.Unmarshal(data, &ar)
 	if err != nil {
 		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
 	}
