@@ -73,59 +73,55 @@ type allocationResponse struct {
 	Data []map[string]kubecost.Allocation `json:"data"`
 }
 
-// QueryAllocation queries /model/allocation by proxying a request to Kubecost
-// through the Kubernetes API server.
-func QueryAllocation(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate string, ctx context.Context) ([]map[string]kubecost.Allocation, error) {
+type AllocationParameters struct {
+	RestConfig *rest.Config
+	Ctx        context.Context
 
-	params := map[string]string{
+	KubecostNamespace string
+	ServiceName       string
+	Window            string
+	Aggregate         string
+	UseProxy          bool
+}
+
+// QueryAllocation queries /model/allocation by proxying a request to Kubecost
+// through the Kubernetes API server if useProxy is true or, if it isn't, by
+// temporarily port forwarding to a Kubecost pod.
+func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, error) {
+
+	requestParams := map[string]string{
 		// if we set this to false, output would be
 		// per-day (we could use it in a more
 		// complicated way to build in-terminal charts)
 		"accumulate": "true",
-		"window":     window,
+		"window":     p.Window,
 	}
 
-	if aggregate != "" {
-		params["aggregate"] = aggregate
+	if p.Aggregate != "" {
+		requestParams["aggregate"] = p.Aggregate
 	}
 
-	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/allocation", params).DoRaw(ctx)
+	var bytes []byte
+	var err error
+	if p.UseProxy {
+		clientset, err := kubernetes.NewForConfig(p.RestConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create clientset: %s", err)
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/allocation", requestParams).DoRaw(p.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+		}
+	} else {
+		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/allocation", requestParams, p.Ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to port forward query: %s", err)
+		}
 	}
 
 	var ar allocationResponse
 	err = json.Unmarshal(bytes, &ar)
-	if err != nil {
-		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
-	}
-
-	return ar.Data, nil
-}
-
-// QueryAllocationFwd queries /model/allocation by temporarily port-forwarding to
-// a Kubecost pod and executing a request against the forwarded port.
-func QueryAllocationFwd(restConfig *rest.Config, kubecostNamespace, serviceName, window, aggregate string, ctx context.Context) ([]map[string]kubecost.Allocation, error) {
-	params := map[string]string{
-		// if we set this to false, output would be
-		// per-day (we could use it in a more
-		// complicated way to build in-terminal charts)
-		"accumulate": "true",
-		"window":     window,
-	}
-
-	if aggregate != "" {
-		params["aggregate"] = aggregate
-	}
-
-	data, err := portForwardedQueryService(restConfig, kubecostNamespace, serviceName, "model/allocation", params, ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to port forward query: %s", err)
-	}
-
-	var ar allocationResponse
-	err = json.Unmarshal(data, &ar)
 	if err != nil {
 		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
 	}

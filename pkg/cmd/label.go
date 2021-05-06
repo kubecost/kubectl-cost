@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kubecost/cost-model/pkg/kubecost"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
@@ -61,25 +60,30 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 
-	currencyCode, err := query.QueryCurrencyCode(ko.clientset, *ko.configFlags.Namespace, no.serviceName, context.Background())
+	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
+		RestConfig:        ko.restConfig,
+		Ctx:               context.Background(),
+		KubecostNamespace: *ko.configFlags.Namespace,
+		ServiceName:       no.serviceName,
+		UseProxy:          no.useProxy,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
 	if !no.isHistorical {
-		var aggs map[string]query.Aggregation
-		var err error
-
-		if no.useProxy {
-			aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "label", no.queryLabel, context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query agg cost model: %s", err)
-			}
-		} else {
-			aggs, err = query.QueryAggCostModelFwd(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "label", no.queryLabel, context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query agg cost model: %s", err)
-			}
+		aggs, err := query.QueryAggCostModel(query.AggCostModelParameters{
+			RestConfig:          ko.restConfig,
+			Ctx:                 context.Background(),
+			KubecostNamespace:   *ko.configFlags.Namespace,
+			ServiceName:         no.serviceName,
+			Window:              no.window,
+			Aggregate:           "namespace",
+			AggregationSubfield: no.queryLabel,
+			UseProxy:            no.useProxy,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
 		// don't show unallocated controller data
@@ -94,18 +98,17 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 			currencyCode,
 		)
 	} else {
-		var allocations []map[string]kubecost.Allocation
-		var err error
-		if no.useProxy {
-			allocations, err = query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, fmt.Sprintf("label:%s", no.queryLabel), context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query allocation API: %s", err)
-			}
-		} else {
-			allocations, err = query.QueryAllocationFwd(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, fmt.Sprintf("label:%s", no.queryLabel), context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query allocation API: %s", err)
-			}
+		allocations, err := query.QueryAllocation(query.AllocationParameters{
+			RestConfig:        ko.restConfig,
+			Ctx:               context.Background(),
+			KubecostNamespace: *ko.configFlags.Namespace,
+			ServiceName:       no.serviceName,
+			Window:            no.window,
+			Aggregate:         fmt.Sprintf("label:%s", no.queryLabel),
+			UseProxy:          no.useProxy,
+		})
+		if err != nil {
+			return fmt.Errorf("failed to query allocation API: %s", err)
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
