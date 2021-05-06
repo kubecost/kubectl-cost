@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
-	"k8s.io/client-go/kubernetes"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
@@ -79,7 +78,6 @@ type KubeOptions struct {
 	configFlags *genericclioptions.ConfigFlags
 
 	restConfig *rest.Config
-	clientset  *kubernetes.Clientset
 	args       []string
 
 	genericclioptions.IOStreams
@@ -139,11 +137,6 @@ func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
 	o.restConfig, err = o.configFlags.ToRESTConfig()
 	if err != nil {
 		return err
-	}
-
-	o.clientset, err = kubernetes.NewForConfig(o.restConfig)
-	if err != nil {
-		return fmt.Errorf("failed to create clientset: %s", err)
 	}
 
 	return nil

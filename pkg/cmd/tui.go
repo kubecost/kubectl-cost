@@ -168,7 +168,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 	queryContext, queryCancel := context.WithCancel(context.Background())
 
 	// TODO: use flags for service name
-	currencyCode, err := query.QueryCurrencyCode(ko.clientset, *ko.configFlags.Namespace, "kubecost-cost-analyzer", queryContext)
+	currencyCode, err := query.QueryCurrencyCode(ko.restConfig, *ko.configFlags.Namespace, "kubecost-cost-analyzer", true, queryContext)
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
@@ -214,7 +214,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 			queryContext, queryCancel = context.WithCancel(context.Background())
 
 			// TODO: use flags for service name
-			aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, "kubecost-cost-analyzer", windowOptions[windowIndex], aggregation, "", queryContext)
+			aggs, err = query.QueryAggCostModel(ko.restConfig, *ko.configFlags.Namespace, "kubecost-cost-analyzer", windowOptions[windowIndex], aggregation, "", true, queryContext)
 
 			if err != nil && strings.Contains(err.Error(), "context canceled") {
 				// do nothing, because the context got canceled to favor a more

@@ -20,8 +20,9 @@ type aggCostModelResponse struct {
 }
 
 // QueryAggCostModel queries /model/aggregatedCostModel by proxying a request to Kubecost
-// through the Kubernetes API server.
-func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string, ctx context.Context) (map[string]Aggregation, error) {
+// through the Kubernetes API server if useProxy is true or, if it isn't, by
+// temporarily port forwarding to a Kubecost pod.
+func QueryAggCostModel(restConfig *rest.Config, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string, useProxy bool, ctx context.Context) (map[string]Aggregation, error) {
 	params := map[string]string{
 		"window":      window,
 		"aggregation": aggregate,
@@ -33,44 +34,30 @@ func QueryAggCostModel(clientset *kubernetes.Clientset, kubecostNamespace, servi
 		params["aggregationSubfield"] = aggregationSubfield
 	}
 
-	bytes, err := clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/aggregatedCostModel", params).DoRaw(ctx)
+	var bytes []byte
+	var err error
+	if useProxy {
+		clientset, err := kubernetes.NewForConfig(restConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create clientset: %s", err)
+		}
 
-	if err != nil {
-		return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+		bytes, err = clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/aggregatedCostModel", params).DoRaw(ctx)
+
+		if err != nil {
+			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+		}
+	} else {
+		bytes, err = portForwardedQueryService(restConfig, kubecostNamespace, serviceName, "model/aggregatedCostModel", params, ctx)
+		if err != nil {
+			return nil, fmt.Errorf("failed to port forward query: %s", err)
+		}
 	}
 
 	var ar aggCostModelResponse
 	err = json.Unmarshal(bytes, &ar)
 	if err != nil {
-		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
-	}
-
-	return ar.Data, nil
-}
-
-// QueryAggCostModelFwd queries /model/aggregatedCostModel by temporarily port-forwarding
-// to a Kubecost pod and executing a request against the forwarded port.
-func QueryAggCostModelFwd(restConfig *rest.Config, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string, ctx context.Context) (map[string]Aggregation, error) {
-	params := map[string]string{
-		"window":      window,
-		"aggregation": aggregate,
-		"rate":        "monthly",
-		"etl":         "true",
-	}
-
-	if aggregationSubfield != "" {
-		params["aggregationSubfield"] = aggregationSubfield
-	}
-
-	data, err := portForwardedQueryService(restConfig, kubecostNamespace, serviceName, "model/aggregatedCostModel", params, ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to port forward query: %s", err)
-	}
-
-	var ar aggCostModelResponse
-	err = json.Unmarshal(data, &ar)
-	if err != nil {
-		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+		return ar.Data, fmt.Errorf("failed to unmarshal aggregatedCostModel response: %s", err)
 	}
 
 	return ar.Data, nil

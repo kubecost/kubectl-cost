@@ -8,7 +8,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kubecost/cost-model/pkg/kubecost"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
@@ -51,25 +50,15 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 
-	currencyCode, err := query.QueryCurrencyCode(ko.clientset, *ko.configFlags.Namespace, no.serviceName, context.Background())
+	currencyCode, err := query.QueryCurrencyCode(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.useProxy, context.Background())
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
 	if !no.isHistorical {
-		var aggs map[string]query.Aggregation
-		var err error
-
-		if no.useProxy {
-			aggs, err = query.QueryAggCostModel(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", "", context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query agg cost model: %s", err)
-			}
-		} else {
-			aggs, err = query.QueryAggCostModelFwd(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", "", context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query agg cost model: %s", err)
-			}
+		aggs, err := query.QueryAggCostModel(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", "", no.useProxy, context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
 
 		writeAggregationRateTable(
@@ -81,18 +70,9 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 			currencyCode,
 		)
 	} else {
-		var allocations []map[string]kubecost.Allocation
-		var err error
-		if no.useProxy {
-			allocations, err = query.QueryAllocation(ko.clientset, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query allocation API: %s", err)
-			}
-		} else {
-			allocations, err = query.QueryAllocationFwd(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", context.Background())
-			if err != nil {
-				return fmt.Errorf("failed to query allocation API: %s", err)
-			}
+		allocations, err := query.QueryAllocation(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "namespace", no.useProxy, context.Background())
+		if err != nil {
+			return fmt.Errorf("failed to query allocation API: %s", err)
 		}
 
 		// Use allocations[0] because the query accumulates to a single result
