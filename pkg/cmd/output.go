@@ -110,7 +110,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 
 	if opts.showEfficiency {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:        "Total Efficiency",
+			Name:        "Cost Efficiency",
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		})
@@ -159,7 +159,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	headerRow = append(headerRow, "Total Cost (All)")
 
 	if opts.showEfficiency {
-		headerRow = append(headerRow, "Total Efficiency")
+		headerRow = append(headerRow, "Cost Efficiency")
 	}
 
 	t.AppendHeader(headerRow)
@@ -399,7 +399,7 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 
 	if opts.showEfficiency {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:        "Monthly Efficiency",
+			Name:        "Cost Efficiency",
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		})
@@ -462,7 +462,7 @@ func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []str
 	headerRow = append(headerRow, "Monthly Rate (All)")
 
 	if opts.showEfficiency {
-		headerRow = append(headerRow, "Monthly Efficiency")
+		headerRow = append(headerRow, "Cost Efficiency")
 	}
 
 	t.AppendHeader(headerRow)
