@@ -60,13 +60,28 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 
-	currencyCode, err := query.QueryCurrencyCode(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.useProxy, context.Background())
+	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
+		RestConfig:        ko.restConfig,
+		Ctx:               context.Background(),
+		KubecostNamespace: *ko.configFlags.Namespace,
+		ServiceName:       no.serviceName,
+		UseProxy:          no.useProxy,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "label", no.queryLabel, no.useProxy, context.Background())
+		aggs, err := query.QueryAggCostModel(query.AggCostModelParameters{
+			RestConfig:          ko.restConfig,
+			Ctx:                 context.Background(),
+			KubecostNamespace:   *ko.configFlags.Namespace,
+			ServiceName:         no.serviceName,
+			Window:              no.window,
+			Aggregate:           "namespace",
+			AggregationSubfield: no.queryLabel,
+			UseProxy:            no.useProxy,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
@@ -83,7 +98,15 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 			currencyCode,
 		)
 	} else {
-		allocations, err := query.QueryAllocation(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, fmt.Sprintf("label:%s", no.queryLabel), no.useProxy, context.Background())
+		allocations, err := query.QueryAllocation(query.AllocationParameters{
+			RestConfig:        ko.restConfig,
+			Ctx:               context.Background(),
+			KubecostNamespace: *ko.configFlags.Namespace,
+			ServiceName:       no.serviceName,
+			Window:            no.window,
+			Aggregate:         fmt.Sprintf("label:%s", no.queryLabel),
+			UseProxy:          no.useProxy,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to query allocation API: %s", err)
 		}

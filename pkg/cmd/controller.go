@@ -53,13 +53,27 @@ func newCmdCostController(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 
-	currencyCode, err := query.QueryCurrencyCode(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.useProxy, context.Background())
+	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
+		RestConfig:        ko.restConfig,
+		Ctx:               context.Background(),
+		KubecostNamespace: *ko.configFlags.Namespace,
+		ServiceName:       no.serviceName,
+		UseProxy:          no.useProxy,
+	})
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
 	if !no.isHistorical {
-		aggs, err := query.QueryAggCostModel(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "controller", "", no.useProxy, context.Background())
+		aggs, err := query.QueryAggCostModel(query.AggCostModelParameters{
+			RestConfig:        ko.restConfig,
+			Ctx:               context.Background(),
+			KubecostNamespace: *ko.configFlags.Namespace,
+			ServiceName:       no.serviceName,
+			Window:            no.window,
+			Aggregate:         "controller",
+			UseProxy:          no.useProxy,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to query agg cost model: %s", err)
 		}
@@ -78,7 +92,15 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 			currencyCode,
 		)
 	} else {
-		allocations, err := query.QueryAllocation(ko.restConfig, *ko.configFlags.Namespace, no.serviceName, no.window, "controller", no.useProxy, context.Background())
+		allocations, err := query.QueryAllocation(query.AllocationParameters{
+			RestConfig:        ko.restConfig,
+			Ctx:               context.Background(),
+			KubecostNamespace: *ko.configFlags.Namespace,
+			ServiceName:       no.serviceName,
+			Window:            no.window,
+			Aggregate:         "controller",
+			UseProxy:          no.useProxy,
+		})
 		if err != nil {
 			return fmt.Errorf("failed to query allocation API: %s", err)
 		}

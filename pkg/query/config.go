@@ -15,23 +15,32 @@ type configsResponse struct {
 	} `json:"data"`
 }
 
-func QueryCurrencyCode(restConfig *rest.Config, kubecostNamespace, serviceName string, useProxy bool, ctx context.Context) (string, error) {
+type CurrencyCodeParameters struct {
+	RestConfig *rest.Config
+	Ctx        context.Context
+
+	KubecostNamespace string
+	ServiceName       string
+	UseProxy          bool
+}
+
+func QueryCurrencyCode(p CurrencyCodeParameters) (string, error) {
 	var bytes []byte
 	var err error
 
-	if useProxy {
-		clientset, err := kubernetes.NewForConfig(restConfig)
+	if p.UseProxy {
+		clientset, err := kubernetes.NewForConfig(p.RestConfig)
 		if err != nil {
 			return "", fmt.Errorf("failed to create clientset: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/getConfigs", nil).DoRaw(ctx)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/getConfigs", nil).DoRaw(p.Ctx)
 
 		if err != nil {
 			return "", fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(restConfig, kubecostNamespace, serviceName, "model/getConfigs", nil, ctx)
+		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/getConfigs", nil, p.Ctx)
 		if err != nil {
 			return "", fmt.Errorf("failed to forward get kubecost: %s", err)
 		}

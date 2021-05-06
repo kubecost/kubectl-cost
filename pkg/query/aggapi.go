@@ -19,36 +19,48 @@ type aggCostModelResponse struct {
 	Data map[string]Aggregation `json:"data"`
 }
 
+type AggCostModelParameters struct {
+	RestConfig *rest.Config
+	Ctx        context.Context
+
+	KubecostNamespace   string
+	ServiceName         string
+	Window              string
+	Aggregate           string
+	AggregationSubfield string
+	UseProxy            bool
+}
+
 // QueryAggCostModel queries /model/aggregatedCostModel by proxying a request to Kubecost
 // through the Kubernetes API server if useProxy is true or, if it isn't, by
 // temporarily port forwarding to a Kubecost pod.
-func QueryAggCostModel(restConfig *rest.Config, kubecostNamespace, serviceName, window, aggregate, aggregationSubfield string, useProxy bool, ctx context.Context) (map[string]Aggregation, error) {
-	params := map[string]string{
-		"window":      window,
-		"aggregation": aggregate,
+func QueryAggCostModel(p AggCostModelParameters) (map[string]Aggregation, error) {
+	requestParams := map[string]string{
+		"window":      p.Window,
+		"aggregation": p.Aggregate,
 		"rate":        "monthly",
 		"etl":         "true",
 	}
 
-	if aggregationSubfield != "" {
-		params["aggregationSubfield"] = aggregationSubfield
+	if p.AggregationSubfield != "" {
+		requestParams["aggregationSubfield"] = p.AggregationSubfield
 	}
 
 	var bytes []byte
 	var err error
-	if useProxy {
-		clientset, err := kubernetes.NewForConfig(restConfig)
+	if p.UseProxy {
+		clientset, err := kubernetes.NewForConfig(p.RestConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create clientset: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(kubecostNamespace).ProxyGet("", serviceName, "9090", "/model/aggregatedCostModel", params).DoRaw(ctx)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/aggregatedCostModel", requestParams).DoRaw(p.Ctx)
 
 		if err != nil {
 			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(restConfig, kubecostNamespace, serviceName, "model/aggregatedCostModel", params, ctx)
+		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/aggregatedCostModel", requestParams, p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to port forward query: %s", err)
 		}
