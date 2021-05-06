@@ -178,7 +178,7 @@ The following flags modify the behavior of the subcommands:
 
 ## Implementation Quirks
 
-In order to provide a seamless experience for standard Kubernetes configurations, `kubectl-cost` temporariliy forwards a port on your system to a Kubecost pod and uses that port to proxy a request. The port will only be bound to `localhost` and will only be open for the duration of the API request.
+In order to provide a seamless experience for standard Kubernetes configurations, `kubectl-cost` temporarily forwards a port on your system to a Kubecost pod and uses that port to proxy a request. The port will only be bound to `localhost` and will only be open for the duration of the API request.
 
 If you don't want a port to be temporarily forwarded, there is legacy behavior exposed with the flag `--use-proxy` that will instead use the Kubernetes API server to proxy a request to Kubecost. This behavior has its own pitfalls, especially with security policies that would prevent the API server from communicating with services. If you'd like to test this behavior, to make sure it will work with your cluster:
 
