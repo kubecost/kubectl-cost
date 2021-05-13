@@ -78,7 +78,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 			KubecostNamespace:   *ko.configFlags.Namespace,
 			ServiceName:         no.serviceName,
 			Window:              no.window,
-			Aggregate:           "namespace",
+			Aggregate:           "label",
 			AggregationSubfield: no.queryLabel,
 			UseProxy:            no.useProxy,
 		})
