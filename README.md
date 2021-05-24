@@ -8,9 +8,17 @@
 
 ## Installation
 
-1. [Install Kubecost](https://docs.kubecost.com/install)
+1. Install Kubecost
 
-    This software requires that you have a running deployment of [Kubecost](https://kubecost.com/) in your cluster. 
+    This software requires that you have a running deployment of [Kubecost](https://kubecost.com/) in your cluster. The recommend path is to use Helm but there are [alternative install options](https://docs.kubecost.com/install).
+
+    #### Helm 3
+
+    ```
+    kubectl create namespace kubecost
+    helm repo add kubecost https://kubecost.github.io/cost-analyzer/
+    helm install kubecost kubecost/cost-analyzer --namespace kubecost --set kubecostToken="a3ViZWN0bEBrdWJlY29zdC5jb20=xm343yadf98"
+    ```
 
 2. Install kubectl cost
 
@@ -20,7 +28,7 @@
     kubectl krew install cost
     ```
 
-    The manifest can be found [here](https://github.com/kubernetes-sigs/krew-index/blob/master/plugins/cost.yaml)
+    The Krew manifest can be found [here](https://github.com/kubernetes-sigs/krew-index/blob/master/plugins/cost.yaml).
 
     #### Linux/MacOS
 
