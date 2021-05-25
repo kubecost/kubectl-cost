@@ -41,7 +41,7 @@ type displayOptions struct {
 }
 
 func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
-	cmd.Flags().StringVar(&options.window, "window", "yesterday", "The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
+	cmd.Flags().StringVar(&options.window, "window", "1d", "The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 	cmd.Flags().BoolVar(&options.isHistorical, "historical", false, "show the total cost during the window instead of the projected monthly rate based on the data in the window")
 	cmd.Flags().BoolVar(&options.showCPUCost, "show-cpu", false, "show data for CPU cost")
 	cmd.Flags().BoolVar(&options.showMemoryCost, "show-memory", false, "show data for memory cost")
