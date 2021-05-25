@@ -156,7 +156,7 @@ The following flags modify the behavior of the subcommands:
     --show-pv                     show data for PV (physical volume) cost
     --show-shared                 show shared cost data
 -A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency.
-    --window string               The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here. (default "yesterday")
+    --window string               The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here. (default "1d")
     --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
 -n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
 -N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
