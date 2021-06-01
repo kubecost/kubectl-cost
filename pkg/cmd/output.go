@@ -179,14 +179,14 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	var summedShared float64
 
 	for _, alloc := range allocations {
-		cluster, _ := alloc.Properties.GetCluster()
+		cluster := alloc.Properties.Cluster
 		allocName := alloc.Name
 
 		allocRow := table.Row{}
 
 		allocRow = append(allocRow, cluster)
 		if showNamespace {
-			ns, _ := alloc.Properties.GetNamespace()
+			ns := alloc.Properties.Namespace
 			allocRow = append(allocRow, ns)
 		}
 		allocRow = append(allocRow, allocName)
@@ -195,7 +195,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 			allocRow = append(allocRow, formatFloat(alloc.CPUCost))
 			summedCPU += alloc.CPUCost
 			if opts.showEfficiency {
-				allocRow = append(allocRow, formatFloat(alloc.CPUEfficiency))
+				allocRow = append(allocRow, formatFloat(alloc.CPUEfficiency()))
 			}
 		}
 
@@ -203,7 +203,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 			allocRow = append(allocRow, formatFloat(alloc.RAMCost))
 			summedMemory += alloc.RAMCost
 			if opts.showEfficiency {
-				allocRow = append(allocRow, formatFloat(alloc.RAMEfficiency))
+				allocRow = append(allocRow, formatFloat(alloc.RAMEfficiency()))
 			}
 		}
 
@@ -213,8 +213,8 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		}
 
 		if opts.showPVCost {
-			allocRow = append(allocRow, formatFloat(alloc.PVCost))
-			summedPV += alloc.PVCost
+			allocRow = append(allocRow, formatFloat(alloc.PVCost()))
+			summedPV += alloc.PVCost()
 		}
 
 		if opts.showNetworkCost {
@@ -227,15 +227,15 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 			summedShared += alloc.SharedCost
 		}
 
-		cumulativeCost := formatFloat(alloc.TotalCost)
+		cumulativeCost := formatFloat(alloc.TotalCost())
 		allocRow = append(allocRow, cumulativeCost)
 
 		if opts.showEfficiency {
-			allocRow = append(allocRow, formatFloat(alloc.TotalEfficiency))
+			allocRow = append(allocRow, formatFloat(alloc.TotalEfficiency()))
 		}
 
 		t.AppendRow(allocRow)
-		summedCost += alloc.TotalCost
+		summedCost += alloc.TotalCost()
 	}
 
 	footerRow := table.Row{}

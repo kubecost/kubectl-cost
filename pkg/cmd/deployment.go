@@ -146,7 +146,7 @@ func applyNamespaceFilterAllocation(allocData map[string]kubecost.Allocation, na
 	}
 
 	for allocName, alloc := range allocData {
-		ns, _ := alloc.Properties.GetNamespace()
+		ns := alloc.Properties.Namespace
 		if ns != namespaceFilter {
 			delete(allocData, allocName)
 		}
