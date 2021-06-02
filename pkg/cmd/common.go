@@ -50,7 +50,7 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().BoolVar(&options.showPVCost, "show-pv", false, "show data for PV (physical volume) cost")
 	cmd.Flags().BoolVar(&options.showNetworkCost, "show-network", false, "show data for network cost")
 	cmd.Flags().BoolVar(&options.showSharedCost, "show-shared", false, "show shared cost data")
-	cmd.Flags().BoolVar(&options.showLoadBalancerCost, "show-loadbalancer", false, "show load balancer cost data")
+	cmd.Flags().BoolVar(&options.showLoadBalancerCost, "show-lb", false, "show load balancer cost data")
 	cmd.Flags().BoolVar(&options.showEfficiency, "show-efficiency", true, "show efficiency of cost alongside CPU and memory cost")
 	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency.")
 	cmd.Flags().StringVar(&options.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
