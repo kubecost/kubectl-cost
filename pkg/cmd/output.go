@@ -23,6 +23,7 @@ const (
 	PVCol               = "PV"
 	NetworkCol          = "Network"
 	SharedCol           = "Shared Cost"
+	LoadBalancerCol     = "Load Balancer Cost"
 )
 
 func formatFloat(f float64) string {
@@ -102,6 +103,12 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		})
 	}
 
+	if opts.showLoadBalancerCost {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name: LoadBalancerCol,
+		})
+	}
+
 	columnConfigs = append(columnConfigs, table.ColumnConfig{
 		Name:        "Total Cost (All)",
 		Align:       text.AlignRight,
@@ -156,6 +163,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		headerRow = append(headerRow, SharedCol)
 	}
 
+	if opts.showLoadBalancerCost {
+		headerRow = append(headerRow, LoadBalancerCol)
+	}
+
 	headerRow = append(headerRow, "Total Cost (All)")
 
 	if opts.showEfficiency {
@@ -177,6 +188,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	var summedPV float64
 	var summedNetwork float64
 	var summedShared float64
+	var summedLoadBalancer float64
 
 	for _, alloc := range allocations {
 		cluster := alloc.Properties.Cluster
@@ -227,6 +239,11 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 			summedShared += alloc.SharedCost
 		}
 
+		if opts.showLoadBalancerCost {
+			allocRow = append(allocRow, formatFloat(alloc.LoadBalancerCost))
+			summedLoadBalancer += alloc.LoadBalancerCost
+		}
+
 		cumulativeCost := formatFloat(alloc.TotalCost())
 		allocRow = append(allocRow, cumulativeCost)
 
@@ -274,6 +291,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 
 	if opts.showSharedCost {
 		footerRow = append(footerRow, formatFloat(summedShared))
+	}
+
+	if opts.showLoadBalancerCost {
+		footerRow = append(footerRow, formatFloat(summedLoadBalancer))
 	}
 
 	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
