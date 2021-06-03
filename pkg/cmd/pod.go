@@ -80,7 +80,7 @@ func runCostPod(ko *KubeOptions, no *CostOptionsPod) error {
 	// Use allocations[0] because the query accumulates to a single result
 	applyNamespaceFilterAllocation(allocations[0], no.filterNamespace)
 
-	writeAllocationTable(ko.Out, "Pod", allocations[0], no.displayOptions, currencyCode, true, no.isHistorical)
+	writeAllocationTable(ko.Out, "Pod", allocations[0], no.displayOptions, currencyCode, true, !no.isHistorical)
 
 	return nil
 }

@@ -108,11 +108,19 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		})
 	}
 
-	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:        "Total Cost (All)",
-		Align:       text.AlignRight,
-		AlignFooter: text.AlignRight,
-	})
+	if projectToMonthlyRate {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Monthly Rate (All)",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	} else {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Total Cost (All)",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
 
 	if opts.showEfficiency {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
@@ -166,7 +174,11 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		headerRow = append(headerRow, LoadBalancerCol)
 	}
 
-	headerRow = append(headerRow, "Total Cost (All)")
+	if projectToMonthlyRate {
+		headerRow = append(headerRow, "Monthly Rate (All)")
+	} else {
+		headerRow = append(headerRow, "Total Cost (All)")
+	}
 
 	if opts.showEfficiency {
 		headerRow = append(headerRow, "Cost Efficiency")
@@ -194,7 +206,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		// This variable exists to scale costs by the active window
 		var histScaleFactor float64 = 1
 
-		if !projectToMonthlyRate {
+		if projectToMonthlyRate {
 
 			// scale by minutes per month divided by duration
 			// of window in minutes to get projected monthly cost.

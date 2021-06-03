@@ -85,7 +85,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 	}
 
 	// Use allocations[0] because the query accumulates to a single result
-	writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions, currencyCode, false, no.isHistorical)
+	writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions, currencyCode, false, !no.isHistorical)
 
 	return nil
 }

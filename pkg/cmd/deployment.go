@@ -82,7 +82,7 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 	// Use allocations[0] because the query accumulates to a single result
 	applyNamespaceFilterAllocation(allocations[0], no.filterNamespace)
 
-	writeAllocationTable(ko.Out, "Deployment", allocations[0], no.displayOptions, currencyCode, true, no.isHistorical)
+	writeAllocationTable(ko.Out, "Deployment", allocations[0], no.displayOptions, currencyCode, true, !no.isHistorical)
 
 	return nil
 }
