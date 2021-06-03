@@ -66,34 +66,6 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
-	// if !no.isHistorical {
-	// aggs, err := query.QueryAggCostModel(query.AggCostModelParameters{
-	// 	RestConfig:        ko.restConfig,
-	// 	Ctx:               context.Background(),
-	// 	KubecostNamespace: *ko.configFlags.Namespace,
-	// 	ServiceName:       no.serviceName,
-	// 	Window:            no.window,
-	// 	Aggregate:         "deployment",
-	// 	UseProxy:          no.useProxy,
-	// })
-	// if err != nil {
-	// 	return fmt.Errorf("failed to query agg cost model: %s", err)
-	// }
-
-	// // don't show unallocated deployment data
-	// delete(aggs, "__unallocated__")
-
-	// applyNamespaceFilter(aggs, no.filterNamespace)
-
-	// writeAggregationRateTable(
-	// 	ko.Out,
-	// 	aggs,
-	// 	[]string{"namespace", "deployment"},
-	// 	deploymentTitleExtractor,
-	// 	no.displayOptions,
-	// 	currencyCode,
-	// )
-
 	allocations, err := query.QueryAllocation(query.AllocationParameters{
 		RestConfig:        ko.restConfig,
 		Ctx:               context.Background(),
@@ -112,51 +84,8 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 
 	writeAllocationTable(ko.Out, "Deployment", allocations[0], no.displayOptions, currencyCode, true, no.isHistorical)
 
-	// } else {
-	// 	allocations, err := query.QueryAllocation(query.AllocationParameters{
-	// 		RestConfig:        ko.restConfig,
-	// 		Ctx:               context.Background(),
-	// 		KubecostNamespace: *ko.configFlags.Namespace,
-	// 		ServiceName:       no.serviceName,
-	// 		Window:            no.window,
-	// 		Aggregate:         "deployment",
-	// 		UseProxy:          no.useProxy,
-	// 	})
-	// 	if err != nil {
-	// 		return fmt.Errorf("failed to query allocation API: %s", err)
-	// 	}
-
-	// 	// Use allocations[0] because the query accumulates to a single result
-	// 	applyNamespaceFilterAllocation(allocations[0], no.filterNamespace)
-
-	// 	writeAllocationTable(ko.Out, "Deployment", allocations[0], no.displayOptions, currencyCode, true)
-	// }
-
 	return nil
 }
-
-// Applies the filter in place by deleting all entries from aggData that are not in
-// the namespace, unless it is an empty string in which case nothing is done.
-// func applyNamespaceFilter(aggData map[string]query.Aggregation, namespaceFilter string) {
-// 	if namespaceFilter == "" {
-// 		return
-// 	}
-
-// 	for aggName, _ := range aggData {
-// 		sp, err := deploymentTitleExtractor(aggName)
-// 		if err != nil {
-// 			klog.Warningf("failed to extract namespace info from aggregation title %s, skipping", aggName)
-// 			continue
-// 		}
-// 		namespace := sp[0]
-
-// 		if namespace != namespaceFilter {
-// 			delete(aggData, aggName)
-// 		}
-// 	}
-
-// 	return
-// }
 
 func applyNamespaceFilterAllocation(allocData map[string]kubecost.Allocation, namespaceFilter string) {
 	if namespaceFilter == "" {

@@ -29,14 +29,14 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, isHistorical bool) {
-	t := makeAllocationTable(allocationType, allocations, opts, currencyCode, showNamespace, isHistorical)
+func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, projectToMonthlyRate bool) {
+	t := makeAllocationTable(allocationType, allocations, opts, currencyCode, showNamespace, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, isHistorical bool) table.Writer {
+func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -192,17 +192,11 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	for _, alloc := range allocations {
 
 		// This variable exists to scale costs by the active window
-		// if the query is not marked historical
-		var histScaleFactor float64
+		var histScaleFactor float64 = 1
 
-		if isHistorical {
+		if !projectToMonthlyRate {
 
-			// scaling is not needed if historical
-			histScaleFactor = 1
-
-		} else {
-
-			// otherwise, scale by minutes per month divided by duration
+			// scale by minutes per month divided by duration
 			// of window in minutes to get projected monthly cost.
 			// Note that this approach assumes the window costs will apply
 			// through the ENTIRE projected month, no matter the window size.

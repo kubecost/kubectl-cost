@@ -188,7 +188,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 		// table here. This TUI library needs us to build tables from a 2D array.
 		// The CSV-rendered (string) go-pretty table, nicely sorted and everything,
 		// is parsed into a 2D array and then the TUI table is built from that.
-		tWriter := makeAllocationTable("Namespace", allocations, do, currencyCode, false, false)
+		tWriter := makeAllocationTable(aggregation, allocations, do, currencyCode, false, false)
 		serializedTable := tWriter.RenderCSV()
 
 		err := setTableFromCSV(table, serializedTable)
