@@ -9,7 +9,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
-	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 const (
@@ -30,14 +29,14 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool) {
-	t := makeAllocationTable(allocationType, allocations, opts, currencyCode, showNamespace)
+func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, projectToMonthlyRate bool) {
+	t := makeAllocationTable(allocationType, allocations, opts, currencyCode, showNamespace, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool) table.Writer {
+func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -109,11 +108,19 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		})
 	}
 
-	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:        "Total Cost (All)",
-		Align:       text.AlignRight,
-		AlignFooter: text.AlignRight,
-	})
+	if projectToMonthlyRate {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Monthly Rate (All)",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	} else {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Total Cost (All)",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
 
 	if opts.showEfficiency {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
@@ -167,7 +174,11 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		headerRow = append(headerRow, LoadBalancerCol)
 	}
 
-	headerRow = append(headerRow, "Total Cost (All)")
+	if projectToMonthlyRate {
+		headerRow = append(headerRow, "Monthly Rate (All)")
+	} else {
+		headerRow = append(headerRow, "Total Cost (All)")
+	}
 
 	if opts.showEfficiency {
 		headerRow = append(headerRow, "Cost Efficiency")
@@ -191,6 +202,20 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	var summedLoadBalancer float64
 
 	for _, alloc := range allocations {
+
+		// This variable exists to scale costs by the active window
+		var histScaleFactor float64 = 1
+
+		if projectToMonthlyRate {
+
+			// scale by minutes per month divided by duration
+			// of window in minutes to get projected monthly cost.
+			// Note that this approach assumes the window costs will apply
+			// through the ENTIRE projected month, no matter the window size.
+			histScaleFactor = 43200 / alloc.Minutes()
+
+		}
+
 		cluster := alloc.Properties.Cluster
 		allocName := alloc.Name
 
@@ -204,47 +229,55 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		allocRow = append(allocRow, allocName)
 
 		if opts.showCPUCost {
-			allocRow = append(allocRow, formatFloat(alloc.CPUCost))
-			summedCPU += alloc.CPUCost
+			adjCPUCost := alloc.CPUCost * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjCPUCost))
+			summedCPU += adjCPUCost
 			if opts.showEfficiency {
 				allocRow = append(allocRow, formatFloat(alloc.CPUEfficiency()))
 			}
 		}
 
 		if opts.showMemoryCost {
-			allocRow = append(allocRow, formatFloat(alloc.RAMCost))
-			summedMemory += alloc.RAMCost
+			adjRAMCost := alloc.RAMCost * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjRAMCost))
+			summedMemory += adjRAMCost
 			if opts.showEfficiency {
 				allocRow = append(allocRow, formatFloat(alloc.RAMEfficiency()))
 			}
 		}
 
 		if opts.showGPUCost {
-			allocRow = append(allocRow, formatFloat(alloc.GPUCost))
-			summedGPU += alloc.GPUCost
+			adjGPUCost := alloc.GPUCost * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjGPUCost))
+			summedGPU += adjGPUCost
 		}
 
 		if opts.showPVCost {
-			allocRow = append(allocRow, formatFloat(alloc.PVCost()))
-			summedPV += alloc.PVCost()
+			adjPVCost := alloc.PVCost() * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjPVCost))
+			summedPV += adjPVCost
 		}
 
 		if opts.showNetworkCost {
-			allocRow = append(allocRow, formatFloat(alloc.NetworkCost))
-			summedNetwork += alloc.NetworkCost
+			adjNetworkCost := alloc.NetworkCost * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjNetworkCost))
+			summedNetwork += adjNetworkCost
 		}
 
 		if opts.showSharedCost {
-			allocRow = append(allocRow, formatFloat(alloc.SharedCost))
-			summedShared += alloc.SharedCost
+			adjSharedCost := alloc.SharedCost * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjSharedCost))
+			summedShared += adjSharedCost
 		}
 
 		if opts.showLoadBalancerCost {
-			allocRow = append(allocRow, formatFloat(alloc.LoadBalancerCost))
-			summedLoadBalancer += alloc.LoadBalancerCost
+			adjLoadBalancerCost := alloc.LoadBalancerCost * histScaleFactor
+			allocRow = append(allocRow, formatFloat(adjLoadBalancerCost))
+			summedLoadBalancer += adjLoadBalancerCost
 		}
 
-		cumulativeCost := formatFloat(alloc.TotalCost())
+		adjTotalCost := alloc.TotalCost() * histScaleFactor
+		cumulativeCost := formatFloat(adjTotalCost)
 		allocRow = append(allocRow, cumulativeCost)
 
 		if opts.showEfficiency {
@@ -252,7 +285,7 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 		}
 
 		t.AppendRow(allocRow)
-		summedCost += alloc.TotalCost()
+		summedCost += adjTotalCost
 	}
 
 	footerRow := table.Row{}
@@ -342,275 +375,4 @@ func podTitleExtractor(aggregationName string) ([]string, error) {
 
 func noopTitleExtractor(aggregationName string) ([]string, error) {
 	return []string{aggregationName}, nil
-}
-
-func writeAggregationRateTable(out io.Writer, aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions, currencyCode string) {
-	t := makeAggregationRateTable(aggs, rowTitles, rowTitleExtractor, opts, currencyCode)
-
-	t.SetOutputMirror(out)
-	t.Render()
-}
-
-func makeAggregationRateTable(aggs map[string]query.Aggregation, rowTitles []string, rowTitleExtractor func(string) ([]string, error), opts displayOptions, currencyCode string) table.Writer {
-	t := table.NewWriter()
-
-	columnConfigs := []table.ColumnConfig{}
-
-	// "row titles" are, for example Namespace and Deployment
-	// for a deployment aggregation
-	for _, rowTitle := range rowTitles {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:      rowTitle,
-			AutoMerge: true,
-		})
-	}
-
-	if opts.showCPUCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: CPUCol,
-		})
-
-		if opts.showEfficiency {
-			columnConfigs = append(columnConfigs, table.ColumnConfig{
-				Name: CPUEfficiencyCol,
-			})
-		}
-	}
-
-	if opts.showMemoryCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: MemoryCol,
-		})
-		if opts.showEfficiency {
-			columnConfigs = append(columnConfigs, table.ColumnConfig{
-				Name: MemoryEfficiencyCol,
-			})
-		}
-	}
-
-	if opts.showGPUCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: GPUCol,
-		})
-	}
-
-	if opts.showPVCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: PVCol,
-		})
-	}
-
-	if opts.showNetworkCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: NetworkCol,
-		})
-	}
-
-	if opts.showSharedCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: SharedCol,
-		})
-	}
-
-	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:        "Monthly Rate (All)",
-		Align:       text.AlignRight,
-		AlignFooter: text.AlignRight,
-	})
-
-	if opts.showEfficiency {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:        "Cost Efficiency",
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		})
-	}
-
-	t.SetColumnConfigs(columnConfigs)
-
-	// t.SetColumnConfigs([]table.ColumnConfig{
-	// 	{
-	// 		Name:      "Cluster",
-	// 		AutoMerge: true,
-	// 	},
-	// 	{
-	// 		Name:      "Namespace",
-	// 		AutoMerge: true,
-	// 	},
-	// 	{
-	// 		Name:        "Monthly Cost",
-	// 		Align:       text.AlignRight,
-	// 		AlignFooter: text.AlignRight,
-	// 	},
-	// })
-
-	headerRow := table.Row{}
-
-	for _, rowTitle := range rowTitles {
-		headerRow = append(headerRow, rowTitle)
-	}
-
-	if opts.showCPUCost {
-		headerRow = append(headerRow, CPUCol)
-		if opts.showEfficiency {
-			headerRow = append(headerRow, CPUEfficiencyCol)
-		}
-	}
-
-	if opts.showMemoryCost {
-		headerRow = append(headerRow, MemoryCol)
-		if opts.showEfficiency {
-			headerRow = append(headerRow, MemoryEfficiencyCol)
-		}
-	}
-
-	if opts.showGPUCost {
-		headerRow = append(headerRow, GPUCol)
-	}
-
-	if opts.showPVCost {
-		headerRow = append(headerRow, PVCol)
-	}
-
-	if opts.showNetworkCost {
-		headerRow = append(headerRow, NetworkCol)
-	}
-
-	if opts.showSharedCost {
-		headerRow = append(headerRow, SharedCol)
-	}
-
-	headerRow = append(headerRow, "Monthly Rate (All)")
-
-	if opts.showEfficiency {
-		headerRow = append(headerRow, "Cost Efficiency")
-	}
-
-	t.AppendHeader(headerRow)
-
-	sortByConfig := []table.SortBy{}
-	sortByConfig = append(sortByConfig, table.SortBy{
-		Name: "Monthly Rate (All)",
-		Mode: table.DscNumeric,
-	})
-
-	t.SortBy(sortByConfig)
-
-	var summedCost float64
-	var summedCPU float64
-	var summedMemory float64
-	var summedGPU float64
-	var summedPV float64
-	var summedNetwork float64
-	var summedShared float64
-
-	for agBy, agg := range aggs {
-
-		agRow := table.Row{}
-
-		titles, err := rowTitleExtractor(agBy)
-		if err != nil {
-			for _, _ = range rowTitles {
-				agRow = append(agRow, agBy)
-			}
-		} else {
-			for _, title := range titles {
-				agRow = append(agRow, title)
-			}
-		}
-
-		if opts.showCPUCost {
-			agRow = append(agRow, formatFloat(agg.CPUCost))
-			summedCPU += agg.CPUCost
-			if opts.showEfficiency {
-				agRow = append(agRow, formatFloat(agg.CPUEfficiency))
-			}
-		}
-
-		if opts.showMemoryCost {
-			agRow = append(agRow, formatFloat(agg.RAMCost))
-			summedMemory += agg.RAMCost
-			if opts.showEfficiency {
-				agRow = append(agRow, formatFloat(agg.RAMEfficiency))
-			}
-		}
-
-		if opts.showGPUCost {
-			agRow = append(agRow, formatFloat(agg.GPUCost))
-			summedGPU += agg.GPUCost
-		}
-
-		if opts.showPVCost {
-			agRow = append(agRow, formatFloat(agg.PVCost))
-			summedPV += agg.PVCost
-		}
-
-		if opts.showNetworkCost {
-			agRow = append(agRow, formatFloat(agg.NetworkCost))
-			summedNetwork += agg.NetworkCost
-		}
-
-		if opts.showSharedCost {
-			agRow = append(agRow, formatFloat(agg.SharedCost))
-			summedShared += agg.SharedCost
-		}
-
-		cumulativeCost := formatFloat(agg.TotalCost)
-		agRow = append(agRow, cumulativeCost)
-
-		if opts.showEfficiency {
-			agRow = append(agRow, formatFloat(agg.Efficiency))
-		}
-
-		t.AppendRow(agRow)
-		summedCost += agg.TotalCost
-	}
-
-	footerRow := table.Row{}
-
-	footerRow = append(footerRow, "SUMMED")
-
-	for i := 0; i < len(rowTitles)-1; i++ {
-		footerRow = append(footerRow, "")
-	}
-
-	if opts.showCPUCost {
-		footerRow = append(footerRow, formatFloat(summedCPU))
-		if opts.showEfficiency {
-			footerRow = append(footerRow, "")
-		}
-	}
-
-	if opts.showMemoryCost {
-		footerRow = append(footerRow, formatFloat(summedMemory))
-		if opts.showEfficiency {
-			footerRow = append(footerRow, "")
-		}
-	}
-
-	if opts.showGPUCost {
-		footerRow = append(footerRow, formatFloat(summedGPU))
-	}
-
-	if opts.showPVCost {
-		footerRow = append(footerRow, formatFloat(summedPV))
-	}
-
-	if opts.showNetworkCost {
-		footerRow = append(footerRow, formatFloat(summedNetwork))
-	}
-
-	if opts.showSharedCost {
-		footerRow = append(footerRow, formatFloat(summedShared))
-	}
-
-	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
-
-	if opts.showEfficiency {
-		footerRow = append(footerRow, "")
-	}
-
-	t.AppendFooter(footerRow)
-
-	return t
 }

@@ -11,6 +11,7 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kubecost/cost-model/pkg/kubecost"
 	"github.com/kubecost/cost-model/pkg/log"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/rivo/tview"
@@ -156,8 +157,8 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 	table := tview.NewTable()
 
-	var aggs map[string]query.Aggregation
-	var aggsMutex sync.Mutex
+	var allocations map[string]kubecost.Allocation
+	var allocMutex sync.Mutex
 	var lastUpdated time.Time
 
 	var err error
@@ -187,7 +188,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 		// table here. This TUI library needs us to build tables from a 2D array.
 		// The CSV-rendered (string) go-pretty table, nicely sorted and everything,
 		// is parsed into a 2D array and then the TUI table is built from that.
-		tWriter := makeAggregationRateTable(aggs, aggregationOptions[aggregation].headers, aggregationOptions[aggregation].titleExtractor, do, currencyCode)
+		tWriter := makeAllocationTable(aggregation, allocations, do, currencyCode, false, true)
 		serializedTable := tWriter.RenderCSV()
 
 		err := setTableFromCSV(table, serializedTable)
@@ -214,13 +215,13 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 			// before the query finishes.
 			queryCancel()
 
-			aggsMutex.Lock()
-			defer aggsMutex.Unlock()
+			allocMutex.Lock()
+			defer allocMutex.Unlock()
 
 			queryContext, queryCancel = context.WithCancel(context.Background())
 
 			// TODO: use flags for service name
-			aggs, err = query.QueryAggCostModel(query.AggCostModelParameters{
+			allocs, err := query.QueryAllocation(query.AllocationParameters{
 				RestConfig:        ko.restConfig,
 				Ctx:               queryContext,
 				KubecostNamespace: *ko.configFlags.Namespace,
@@ -229,6 +230,8 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 				Aggregate:         aggregation,
 				UseProxy:          true,
 			})
+
+			allocations = allocs[0]
 
 			if err != nil && strings.Contains(err.Error(), "context canceled") {
 				// do nothing, because the context got canceled to favor a more
