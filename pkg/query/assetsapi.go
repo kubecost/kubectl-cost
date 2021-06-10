@@ -42,7 +42,7 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 		"window":             p.Window,
 		"aggregate":          "",
 		"accumulate":         "true",
-		"disableAdjustments": "true",
+		"disableAdjustments": "false",
 		"filterTypes":        p.FilterTypes,
 	}
 
