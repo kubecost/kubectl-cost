@@ -36,12 +36,12 @@ func QueryAssets(p AssetParameters) ([]map[string]Assets, error) {
 
 	// aggregate, accumulate, and disableAdjustments are hardcoded;
 	// as other asset types are added in to be filtered by, this may change,
-	// but for now anything beyond the defaults isn't needed.
+	// but for now anything beyond isn't needed.
 
 	requestParams := map[string]string{
 		"window":             p.Window,
 		"aggregate":          "",
-		"accumulate":         "false",
+		"accumulate":         "true",
 		"disableAdjustments": "true",
 		"filterTypes":        p.FilterTypes,
 	}

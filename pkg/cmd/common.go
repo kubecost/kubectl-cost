@@ -30,6 +30,9 @@ type CostOptions struct {
 	displayOptions
 }
 
+// With the addition of commands which query the assets API,
+// some of these don't apply to all commands. However, as they
+// are applied during the output, this shouldn't cause issues.
 type displayOptions struct {
 	showCPUCost          bool
 	showMemoryCost       bool
@@ -39,6 +42,8 @@ type displayOptions struct {
 	showEfficiency       bool
 	showSharedCost       bool
 	showLoadBalancerCost bool
+	showAssetType        bool
+	showRAMCost          bool
 }
 
 func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
@@ -52,7 +57,9 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().BoolVar(&options.showSharedCost, "show-shared", false, "show shared cost data")
 	cmd.Flags().BoolVar(&options.showLoadBalancerCost, "show-lb", false, "show load balancer cost data")
 	cmd.Flags().BoolVar(&options.showEfficiency, "show-efficiency", true, "show efficiency of cost alongside CPU and memory cost")
-	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency.")
+	cmd.Flags().BoolVar(&options.showAssetType, "show-type", false, "show type of assets displayed.")
+	cmd.Flags().BoolVar(&options.showRAMCost, "show-ram", false, "show data for RAM cost")
+	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-ram for node.")
 	cmd.Flags().StringVar(&options.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
 	cmd.Flags().BoolVar(&options.useProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
 }
@@ -88,6 +95,8 @@ func (co *CostOptions) Complete() {
 		co.showNetworkCost = true
 		co.showSharedCost = true
 		co.showLoadBalancerCost = true
+		co.showAssetType = true
+		co.showRAMCost = true
 	}
 }
 

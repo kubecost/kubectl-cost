@@ -11,8 +11,8 @@ import (
 	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
-// CostOptionsNamespace contains the standard CostOptions and any
-// options specific to namespace queries.
+// CostOptionsNode contains the standard CostOptions and any
+// options specific to node queries.
 type CostOptionsNode struct {
 	CostOptions
 }
@@ -69,7 +69,7 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 		Window:             no.window,
 		Aggregate:          "",
 		DisableAdjustments: false,
-		Accumulate:         false,
+		Accumulate:         true,
 		UseProxy:           no.useProxy,
 		FilterTypes:        "Node",
 	})
@@ -77,12 +77,7 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 		return fmt.Errorf("failed to query allocation API: %s", err)
 	}
 
-	fmt.Println(currencyCode)
-	fmt.Println(assets)
-	atype := fmt.Sprintf("%T", assets)
-	fmt.Println(atype)
-
-	// Use allocations[0] because the query accumulates to a single result
+	// Use assets[0] because the query accumulates to a single result
 	writeAssetTable(ko.Out, "Node", assets[0], no.displayOptions, currencyCode, !no.isHistorical)
 
 	return nil
