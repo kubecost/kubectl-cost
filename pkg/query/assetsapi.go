@@ -11,8 +11,8 @@ import (
 )
 
 type assetResponse struct {
-	Code int                 `json:"code"`
-	Data []map[string]Assets `json:"data"`
+	Code int                    `json:"code"`
+	Data []map[string]AssetNode `json:"data"`
 }
 
 type AssetParameters struct {
@@ -32,7 +32,7 @@ type AssetParameters struct {
 // QueryAssets queries /model/assets by proxying a request to Kubecost
 // through the Kubernetes API server if useProxy is true or, if it isn't, by
 // temporarily port forwarding to a Kubecost pod.
-func QueryAssets(p AssetParameters) ([]map[string]Assets, error) {
+func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 
 	// aggregate, accumulate, and disableAdjustments are hardcoded;
 	// as other asset types are added in to be filtered by, this may change,
@@ -78,7 +78,7 @@ func QueryAssets(p AssetParameters) ([]map[string]Assets, error) {
 	return ar.Data, nil
 }
 
-type Assets struct {
+type AssetNode struct {
 	Type         string                   `json:"type"`
 	Properties   kubecost.AssetProperties `json:"properties"`
 	Labels       kubecost.AssetLabels     `json:"labels"`

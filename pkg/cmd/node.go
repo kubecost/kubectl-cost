@@ -62,16 +62,13 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 	}
 
 	assets, err := query.QueryAssets(query.AssetParameters{
-		RestConfig:         ko.restConfig,
-		Ctx:                context.Background(),
-		KubecostNamespace:  *ko.configFlags.Namespace,
-		ServiceName:        no.serviceName,
-		Window:             no.window,
-		Aggregate:          "",
-		DisableAdjustments: false,
-		Accumulate:         true,
-		UseProxy:           no.useProxy,
-		FilterTypes:        "Node",
+		RestConfig:        ko.restConfig,
+		Ctx:               context.Background(),
+		KubecostNamespace: *ko.configFlags.Namespace,
+		ServiceName:       no.serviceName,
+		Window:            no.window,
+		UseProxy:          no.useProxy,
+		FilterTypes:       "Node",
 	})
 	if err != nil {
 		return fmt.Errorf("failed to query allocation API: %s", err)

@@ -25,7 +25,7 @@ const (
 	SharedCol           = "Shared Cost"
 	LoadBalancerCol     = "Load Balancer Cost"
 	NameCol             = "Name"
-	TypeCol             = "Asset Type"
+	AssetTypeCol        = "Asset Type"
 	CPUCostCol          = "CPU Cost"
 	RAMCostCol          = "RAM Cost"
 )
@@ -346,14 +346,14 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	return t
 }
 
-func writeAssetTable(out io.Writer, assetType string, assets map[string]query.Assets, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
+func writeAssetTable(out io.Writer, assetType string, assets map[string]query.AssetNode, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
 	t := makeAssetTable(assetType, assets, opts, currencyCode, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAssetTable(assetType string, assets map[string]query.Assets, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -369,7 +369,7 @@ func makeAssetTable(assetType string, assets map[string]query.Assets, opts displ
 
 	if opts.showAssetType {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name: TypeCol,
+			Name: AssetTypeCol,
 		})
 	}
 
@@ -381,7 +381,7 @@ func makeAssetTable(assetType string, assets map[string]query.Assets, opts displ
 		})
 	}
 
-	if opts.showRAMCost {
+	if opts.showMemoryCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
 			Name:        RAMCostCol,
 			Align:       text.AlignRight,
@@ -412,14 +412,14 @@ func makeAssetTable(assetType string, assets map[string]query.Assets, opts displ
 	headerRow = append(headerRow, NameCol)
 
 	if opts.showAssetType {
-		headerRow = append(headerRow, TypeCol)
+		headerRow = append(headerRow, AssetTypeCol)
 	}
 
 	if opts.showCPUCost {
 		headerRow = append(headerRow, CPUCostCol)
 	}
 
-	if opts.showRAMCost {
+	if opts.showMemoryCost {
 		headerRow = append(headerRow, RAMCostCol)
 	}
 
@@ -470,7 +470,7 @@ func makeAssetTable(assetType string, assets map[string]query.Assets, opts displ
 			summedCPUCost += adjCPUCost
 		}
 
-		if opts.showRAMCost {
+		if opts.showMemoryCost {
 			adjRAMCost := asset.RAMCost * histScaleFactor
 			assetRow = append(assetRow, formatFloat(adjRAMCost))
 			summedRAMCost += adjRAMCost
@@ -498,7 +498,7 @@ func makeAssetTable(assetType string, assets map[string]query.Assets, opts displ
 		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCPUCost)))
 	}
 
-	if opts.showRAMCost {
+	if opts.showMemoryCost {
 		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedRAMCost)))
 	}
 
