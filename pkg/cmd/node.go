@@ -67,6 +67,7 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 		KubecostNamespace: *ko.configFlags.Namespace,
 		ServiceName:       no.serviceName,
 		Window:            no.window,
+		Accumulate:        "true",
 		UseProxy:          no.useProxy,
 		FilterTypes:       "Node",
 	})

@@ -228,6 +228,7 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 				ServiceName:       "kubecost-cost-analyzer",
 				Window:            windowOptions[windowIndex],
 				Aggregate:         aggregation,
+				Accumulate:        "true",
 				UseProxy:          true,
 			})
 

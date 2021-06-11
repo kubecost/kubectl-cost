@@ -73,6 +73,7 @@ func runCostDeployment(ko *KubeOptions, no *CostOptionsDeployment) error {
 		ServiceName:       no.serviceName,
 		Window:            no.window,
 		Aggregate:         "deployment",
+		Accumulate:        "true",
 		UseProxy:          no.useProxy,
 	})
 	if err != nil {

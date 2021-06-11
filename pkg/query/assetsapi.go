@@ -24,7 +24,7 @@ type AssetParameters struct {
 	Window             string
 	Aggregate          string
 	DisableAdjustments bool
-	Accumulate         bool
+	Accumulate         string
 	UseProxy           bool
 	FilterTypes        string
 }
@@ -39,11 +39,9 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 	// but for now anything beyond isn't needed.
 
 	requestParams := map[string]string{
-		"window":             p.Window,
-		"aggregate":          "",
-		"accumulate":         "true",
-		"disableAdjustments": "false",
-		"filterTypes":        p.FilterTypes,
+		"window":      p.Window,
+		"accumulate":  p.Accumulate,
+		"filterTypes": p.FilterTypes,
 	}
 
 	if p.Aggregate != "" {

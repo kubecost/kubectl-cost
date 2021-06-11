@@ -78,6 +78,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		ServiceName:       no.serviceName,
 		Window:            no.window,
 		Aggregate:         fmt.Sprintf("label:%s", no.queryLabel),
+		Accumulate:        "true",
 		UseProxy:          no.useProxy,
 	})
 	if err != nil {

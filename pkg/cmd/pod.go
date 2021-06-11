@@ -71,6 +71,7 @@ func runCostPod(ko *KubeOptions, no *CostOptionsPod) error {
 		ServiceName:       no.serviceName,
 		Window:            no.window,
 		Aggregate:         "pod",
+		Accumulate:        "true",
 		UseProxy:          no.useProxy,
 	})
 	if err != nil {
