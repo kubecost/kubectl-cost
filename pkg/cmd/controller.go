@@ -71,6 +71,7 @@ func runCostController(ko *KubeOptions, no *CostOptionsController) error {
 		ServiceName:       no.serviceName,
 		Window:            no.window,
 		Aggregate:         "controller",
+		Accumulate:        "true",
 		UseProxy:          no.useProxy,
 	})
 	if err != nil {

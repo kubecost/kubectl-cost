@@ -68,6 +68,7 @@ func runCostNamespace(ko *KubeOptions, no *CostOptionsNamespace) error {
 		ServiceName:       no.serviceName,
 		Window:            no.window,
 		Aggregate:         "namespace",
+		Accumulate:        "true",
 		UseProxy:          no.useProxy,
 	})
 	if err != nil {

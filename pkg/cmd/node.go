@@ -11,21 +11,19 @@ import (
 	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
-// CostOptionsPod contains the standard CostOptions and any
-// options specific to pod queries.
-type CostOptionsPod struct {
-	filterNamespace string
-
+// CostOptionsNode contains the standard CostOptions and any
+// options specific to node queries.
+type CostOptionsNode struct {
 	CostOptions
 }
 
-func newCmdCostPod(streams genericclioptions.IOStreams) *cobra.Command {
+func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeO := NewKubeOptions(streams)
-	podO := &CostOptionsPod{}
+	assetsO := &CostOptionsNode{}
 
 	cmd := &cobra.Command{
-		Use:   "pod",
-		Short: "view cost information aggregated by pod",
+		Use:   "node",
+		Short: "view cost information by nodes",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
 				return err
@@ -34,24 +32,23 @@ func newCmdCostPod(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			podO.CostOptions.Complete()
+			assetsO.CostOptions.Complete()
 
-			if err := podO.CostOptions.Validate(); err != nil {
+			if err := assetsO.CostOptions.Validate(); err != nil {
 				return err
 			}
 
-			return runCostPod(kubeO, podO)
+			return runCostNode(kubeO, assetsO)
 		},
 	}
 
-	cmd.Flags().StringVarP(&podO.filterNamespace, "namespace", "n", "", "Limit results to only one namespace. Defaults to all namespaces.")
-	addCostOptionsFlags(cmd, &podO.CostOptions)
+	addCostOptionsFlags(cmd, &assetsO.CostOptions)
 	addKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
 
-func runCostPod(ko *KubeOptions, no *CostOptionsPod) error {
+func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		RestConfig:        ko.restConfig,
@@ -64,24 +61,22 @@ func runCostPod(ko *KubeOptions, no *CostOptionsPod) error {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
-	allocations, err := query.QueryAllocation(query.AllocationParameters{
+	assets, err := query.QueryAssets(query.AssetParameters{
 		RestConfig:        ko.restConfig,
 		Ctx:               context.Background(),
 		KubecostNamespace: *ko.configFlags.Namespace,
 		ServiceName:       no.serviceName,
 		Window:            no.window,
-		Aggregate:         "pod",
 		Accumulate:        "true",
 		UseProxy:          no.useProxy,
+		FilterTypes:       "Node",
 	})
 	if err != nil {
 		return fmt.Errorf("failed to query allocation API: %s", err)
 	}
 
-	// Use allocations[0] because the query accumulates to a single result
-	applyNamespaceFilterAllocation(allocations[0], no.filterNamespace)
-
-	writeAllocationTable(ko.Out, "Pod", allocations[0], no.displayOptions, currencyCode, true, !no.isHistorical)
+	// Use assets[0] because the query accumulates to a single result
+	writeAssetTable(ko.Out, "Node", assets[0], no.displayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }

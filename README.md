@@ -50,7 +50,7 @@
 
 ## Usage
 
-There are several supported subcommands: `namespace`, `deployment`, `controller`, `label`, `pod`, and `tui`, which display cost information aggregated by the name of the subcommand (see Examples). Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
+There are several supported subcommands: `namespace`, `deployment`, `controller`, `label`, `pod`, `node`, and `tui`, which display cost information aggregated by the name of the subcommand (see Examples). Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
 
 The exception to these descriptions is `kubectl cost tui`, which displays a TUI and is currently limited to only monthly rate projections. It currently supports all of the previously mentioned aggregations except label. These limitations are because the TUI is an experimental feature - if you like it, let us know! We'd be happy to dedicate time to expanding its functionality.
 
@@ -141,6 +141,30 @@ kubectl cost pod \
   -n kube-system
 ```
 
+Alternatively, kubectl cost can show cost by the asset type.
+To view node cost with breakdowns of RAM and CPU cost for a 
+window of 7 days.
+``` sh
+kubectl cost node \
+  --historical \
+  --window 7d \
+  --show-cpu \
+  --show-memory
+```
+
+Which yields an output with this format:
+```
++-------------+---------------------------------------------+---------------+--------------+---------------+
+| CLUSTER     | NAME                                        | CPU COST      | RAM COST     | TOTAL COST    |
++-------------+---------------------------------------------+---------------+--------------+---------------+
+| cluster-one | gke-test-cluster-default-pool-d6266c7c-dqms |      4.128570 |     2.128920 |      6.257491 |
+|             | gke-test-cluster-pool-1-9bb98ef8-3w6g       |      4.128570 |     2.128920 |      6.257491 |
+|             | gke-test-cluster-pool-1-9bb98ef8-cf3j       |      4.128570 |     2.128924 |      6.257495 |
+|             | gke-test-cluster-pool-1-9bb98ef8-kdsf       |      4.128570 |     2.128924 |      6.257495 |
++-------------+---------------------------------------------+---------------+--------------+---------------+
+| SUMMED      |                                             | USD 16.514280 | USD 8.515688 | USD 25.029972 |
++-------------+---------------------------------------------+---------------+--------------+---------------+
+```
 
 #### Flags
 See `kubectl cost [subcommand] --help` for the full set of flags.
@@ -148,14 +172,16 @@ See `kubectl cost [subcommand] --help` for the full set of flags.
 The following flags modify the behavior of the subcommands:
 ```
     --historical                  show the total cost during the window instead of the projected monthly rate based on the data in the window"
+    --show-asset-type             show type of assets displayed.
     --show-cpu                    show data for CPU cost
     --show-efficiency             show efficiency of cost alongside cost where available (default true)
     --show-gpu                    show data for GPU cost
+    --show-lb                     show load balancer cost data
     --show-memory                 show data for memory cost
     --show-network                show data for network cost
     --show-pv                     show data for PV (physical volume) cost
     --show-shared                 show shared cost data
--A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency.
+-A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.
     --window string               The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here. (default "1d")
     --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
 -n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.

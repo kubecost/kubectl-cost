@@ -9,6 +9,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
+	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 const (
@@ -23,6 +24,10 @@ const (
 	NetworkCol          = "Network"
 	SharedCol           = "Shared Cost"
 	LoadBalancerCol     = "Load Balancer Cost"
+	NameCol             = "Name"
+	AssetTypeCol        = "Asset Type"
+	CPUCostCol          = "CPU Cost"
+	RAMCostCol          = "RAM Cost"
 )
 
 func formatFloat(f float64) string {
@@ -335,6 +340,169 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	if opts.showEfficiency {
 		footerRow = append(footerRow, "")
 	}
+
+	t.AppendFooter(footerRow)
+
+	return t
+}
+
+func writeAssetTable(out io.Writer, assetType string, assets map[string]query.AssetNode, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
+	t := makeAssetTable(assetType, assets, opts, currencyCode, projectToMonthlyRate)
+
+	t.SetOutputMirror(out)
+	t.Render()
+}
+
+func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+	t := table.NewWriter()
+
+	columnConfigs := []table.ColumnConfig{}
+
+	columnConfigs = append(columnConfigs, table.ColumnConfig{
+		Name:      ClusterCol,
+		AutoMerge: true,
+	})
+
+	columnConfigs = append(columnConfigs, table.ColumnConfig{
+		Name: NameCol,
+	})
+
+	if opts.showAssetType {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name: AssetTypeCol,
+		})
+	}
+
+	if opts.showCPUCost {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        CPUCostCol,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+
+	if opts.showMemoryCost {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        RAMCostCol,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+
+	if projectToMonthlyRate {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Monthly Cost",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	} else {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        "Total Cost",
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+
+	t.SetColumnConfigs(columnConfigs)
+
+	headerRow := table.Row{}
+
+	headerRow = append(headerRow, ClusterCol)
+
+	headerRow = append(headerRow, NameCol)
+
+	if opts.showAssetType {
+		headerRow = append(headerRow, AssetTypeCol)
+	}
+
+	if opts.showCPUCost {
+		headerRow = append(headerRow, CPUCostCol)
+	}
+
+	if opts.showMemoryCost {
+		headerRow = append(headerRow, RAMCostCol)
+	}
+
+	if projectToMonthlyRate {
+		headerRow = append(headerRow, "Monthly Cost")
+	} else {
+		headerRow = append(headerRow, "Total Cost")
+	}
+
+	t.AppendHeader(headerRow)
+
+	var summedCost float64
+	var summedCPUCost float64
+	var summedRAMCost float64
+
+	for _, asset := range assets {
+
+		// This variable exists to scale costs by the active window
+		var histScaleFactor float64 = 1
+
+		if projectToMonthlyRate {
+
+			// scale by minutes per month divided by duration
+			// of window in minutes to get projected monthly cost.
+			// Note that this approach assumes the window costs will apply
+			// through the ENTIRE projected month, no matter the window size.
+			histScaleFactor = 43200 / asset.Minutes
+
+		}
+
+		name := asset.Properties.Name
+		cluster := asset.Properties.Cluster
+
+		assetRow := table.Row{}
+
+		assetRow = append(assetRow, cluster)
+
+		assetRow = append(assetRow, name)
+
+		if opts.showAssetType {
+			assetType := asset.NodeType
+			assetRow = append(assetRow, assetType)
+		}
+
+		if opts.showCPUCost {
+			adjCPUCost := asset.CPUCost * histScaleFactor
+			assetRow = append(assetRow, formatFloat(adjCPUCost))
+			summedCPUCost += adjCPUCost
+		}
+
+		if opts.showMemoryCost {
+			adjRAMCost := asset.RAMCost * histScaleFactor
+			assetRow = append(assetRow, formatFloat(adjRAMCost))
+			summedRAMCost += adjRAMCost
+		}
+
+		adjTotalCost := asset.TotalCost * histScaleFactor
+		cumulativeCost := formatFloat(adjTotalCost)
+		assetRow = append(assetRow, cumulativeCost)
+
+		t.AppendRow(assetRow)
+		summedCost += adjTotalCost
+	}
+
+	footerRow := table.Row{}
+
+	footerRow = append(footerRow, "SUMMED")
+
+	footerRow = append(footerRow, "")
+
+	if opts.showAssetType {
+		footerRow = append(footerRow, "")
+	}
+
+	if opts.showCPUCost {
+		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCPUCost)))
+	}
+
+	if opts.showMemoryCost {
+		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedRAMCost)))
+	}
+
+	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
 
 	t.AppendFooter(footerRow)
 

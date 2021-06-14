@@ -81,6 +81,7 @@ type AllocationParameters struct {
 	ServiceName       string
 	Window            string
 	Aggregate         string
+	Accumulate        string
 	UseProxy          bool
 }
 
@@ -93,7 +94,7 @@ func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, 
 		// if we set this to false, output would be
 		// per-day (we could use it in a more
 		// complicated way to build in-terminal charts)
-		"accumulate": "true",
+		"accumulate": p.Accumulate,
 		"window":     p.Window,
 	}
 
