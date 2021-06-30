@@ -15,9 +15,8 @@
     #### Helm 3
 
     ```
-    kubectl create namespace kubecost
     helm repo add kubecost https://kubecost.github.io/cost-analyzer/
-    helm install kubecost kubecost/cost-analyzer --namespace kubecost --set kubecostToken="a3ViZWN0bEBrdWJlY29zdC5jb20=xm343yadf98"
+    helm upgrade -i --create-namespace kubecost kubecost/cost-analyzer --namespace kubecost --set kubecostToken="a3ViZWN0bEBrdWJlY29zdC5jb20=xm343yadf98"
     ```
 
 2. Install kubectl cost
