@@ -9,7 +9,6 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
-	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 const (
@@ -347,14 +346,14 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	return t
 }
 
-func writeAssetTable(out io.Writer, assetType string, assets map[string]query.AssetNode, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
+func writeAssetTable(out io.Writer, assetType string, assets map[string]kubecost.Asset, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
 	t := makeAssetTable(assetType, assets, opts, currencyCode, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -460,12 +459,12 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 			// of window in minutes to get projected monthly cost.
 			// Note that this approach assumes the window costs will apply
 			// through the ENTIRE projected month, no matter the window size.
-			histScaleFactor = 43200 / asset.Minutes
+			histScaleFactor = 43200 / asset.Minutes()
 
 		}
 
-		name := asset.Properties.Name
-		cluster := asset.Properties.Cluster
+		name := asset.Properties().Name
+		cluster := asset.Properties().Cluster
 
 		assetRow := table.Row{}
 
@@ -473,35 +472,41 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 
 		assetRow = append(assetRow, name)
 
-		if opts.showAssetType {
-			assetType := asset.NodeType
-			assetRow = append(assetRow, assetType)
+		switch a := asset.(type) {
+
+		case *kubecost.Node:
+
+			if opts.showAssetType {
+				assetType := a.NodeType
+				assetRow = append(assetRow, assetType)
+			}
+
+			if opts.showCPUCost {
+				adjCPUCost := a.CPUCost * histScaleFactor
+				assetRow = append(assetRow, formatFloat(adjCPUCost))
+				summedCPUCost += adjCPUCost
+			}
+
+			if opts.showGPUCost {
+				adjGPUCost := a.GPUCost * histScaleFactor
+				assetRow = append(assetRow, formatFloat(adjGPUCost))
+				summedGPUCost += adjGPUCost
+			}
+
+			if opts.showMemoryCost {
+				adjRAMCost := a.RAMCost * histScaleFactor
+				assetRow = append(assetRow, formatFloat(adjRAMCost))
+				summedRAMCost += adjRAMCost
+			}
+
+			adjTotalCost := a.TotalCost() * histScaleFactor
+			cumulativeCost := formatFloat(adjTotalCost)
+			assetRow = append(assetRow, cumulativeCost)
+
+			t.AppendRow(assetRow)
+			summedCost += adjTotalCost
 		}
 
-		if opts.showCPUCost {
-			adjCPUCost := asset.CPUCost * histScaleFactor
-			assetRow = append(assetRow, formatFloat(adjCPUCost))
-			summedCPUCost += adjCPUCost
-		}
-
-		if opts.showGPUCost {
-			adjGPUCost := asset.GPUCost * histScaleFactor
-			assetRow = append(assetRow, formatFloat(adjGPUCost))
-			summedGPUCost += adjGPUCost
-		}
-
-		if opts.showMemoryCost {
-			adjRAMCost := asset.RAMCost * histScaleFactor
-			assetRow = append(assetRow, formatFloat(adjRAMCost))
-			summedRAMCost += adjRAMCost
-		}
-
-		adjTotalCost := asset.TotalCost * histScaleFactor
-		cumulativeCost := formatFloat(adjTotalCost)
-		assetRow = append(assetRow, cumulativeCost)
-
-		t.AppendRow(assetRow)
-		summedCost += adjTotalCost
 	}
 
 	footerRow := table.Row{}

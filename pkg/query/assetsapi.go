@@ -10,11 +10,6 @@ import (
 	"k8s.io/client-go/rest"
 )
 
-type assetResponse struct {
-	Code int                    `json:"code"`
-	Data []map[string]AssetNode `json:"data"`
-}
-
 type AssetParameters struct {
 	RestConfig *rest.Config
 	Ctx        context.Context
@@ -32,7 +27,7 @@ type AssetParameters struct {
 // QueryAssets queries /model/assets by proxying a request to Kubecost
 // through the Kubernetes API server if useProxy is true or, if it isn't, by
 // temporarily port forwarding to a Kubecost pod.
-func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
+func QueryAssets(p AssetParameters) ([]map[string]kubecost.Asset, error) {
 
 	// aggregate, accumulate, and disableAdjustments are hardcoded;
 	// as other asset types are added in to be filtered by, this may change,
@@ -67,36 +62,27 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 		}
 	}
 
-	var ar assetResponse
+	var asrl []map[string]kubecost.Asset
+
+	var ar kubecost.AssetAPIResponse
+
 	err = json.Unmarshal(bytes, &ar)
-	if err != nil {
-		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+	responseList := ar.Data.Assets
+
+	for _, resp := range responseList {
+
+		as := make(map[string]kubecost.Asset)
+
+		for str, asset := range resp.Assets {
+			as[str] = asset
+		}
+
+		asrl = append(asrl, as)
 	}
 
-	return ar.Data, nil
-}
+	if err != nil {
+		return asrl, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+	}
 
-type AssetNode struct {
-	Type         string                   `json:"type"`
-	Properties   kubecost.AssetProperties `json:"properties"`
-	Labels       kubecost.AssetLabels     `json:"labels"`
-	Start        string                   `json:"start"`
-	End          string                   `json:"end"`
-	Minutes      float64                  `json:"minutes"`
-	NodeType     string                   `json:"nodeType"`
-	CpuCores     float64                  `json:"cpuCores"`
-	RamBytes     float64                  `json:"ramBytes"`
-	CPUCoreHours float64                  `json:"cpuCoreHours"`
-	RAMByteHours float64                  `json:"ramByteHours"`
-	GPUHours     float64                  `json:"GPUHours"`
-	CPUBreakdown kubecost.Breakdown       `json:"cpuBreakdown"`
-	GPUBreakdown kubecost.Breakdown       `json:"ramBreakdown"`
-	Preemptible  float64                  `json:"preemptible"`
-	Discount     float64                  `json:"discount"`
-	CPUCost      float64                  `json:"cpuCost"`
-	GPUCost      float64                  `json:"gpuCost"`
-	GPUCount     float64                  `json:"gpuCount"`
-	RAMCost      float64                  `json:"ramCost"`
-	Adjustment   float64                  `json:"adjustment"`
-	TotalCost    float64                  `json:"totalCost"`
+	return asrl, nil
 }
