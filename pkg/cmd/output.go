@@ -27,6 +27,7 @@ const (
 	NameCol             = "Name"
 	AssetTypeCol        = "Asset Type"
 	CPUCostCol          = "CPU Cost"
+	GPUCostCol          = "GPU Cost"
 	RAMCostCol          = "RAM Cost"
 )
 
@@ -381,6 +382,14 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 		})
 	}
 
+	if opts.showGPUCost {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name:        GPUCostCol,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		})
+	}
+
 	if opts.showMemoryCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
 			Name:        RAMCostCol,
@@ -419,6 +428,10 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 		headerRow = append(headerRow, CPUCostCol)
 	}
 
+	if opts.showGPUCost {
+		headerRow = append(headerRow, GPUCostCol)
+	}
+
 	if opts.showMemoryCost {
 		headerRow = append(headerRow, RAMCostCol)
 	}
@@ -433,6 +446,7 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 
 	var summedCost float64
 	var summedCPUCost float64
+	var summedGPUCost float64
 	var summedRAMCost float64
 
 	for _, asset := range assets {
@@ -470,6 +484,12 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 			summedCPUCost += adjCPUCost
 		}
 
+		if opts.showGPUCost {
+			adjGPUCost := asset.GPUCost * histScaleFactor
+			assetRow = append(assetRow, formatFloat(adjGPUCost))
+			summedGPUCost += adjGPUCost
+		}
+
 		if opts.showMemoryCost {
 			adjRAMCost := asset.RAMCost * histScaleFactor
 			assetRow = append(assetRow, formatFloat(adjRAMCost))
@@ -496,6 +516,10 @@ func makeAssetTable(assetType string, assets map[string]query.AssetNode, opts di
 
 	if opts.showCPUCost {
 		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCPUCost)))
+	}
+
+	if opts.showGPUCost {
+		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedGPUCost)))
 	}
 
 	if opts.showMemoryCost {
