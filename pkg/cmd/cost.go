@@ -123,6 +123,7 @@ func NewCmdCost(
 	cmd.AddCommand(newCmdCostLabel(streams))
 	cmd.AddCommand(newCmdCostPod(streams))
 	cmd.AddCommand(newCmdCostNode(streams))
+	cmd.AddCommand(newCmdCostCloud(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
 

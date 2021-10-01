@@ -373,28 +373,31 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 		})
 	}
 
-	if opts.showCPUCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:        CPUCostCol,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		})
-	}
+	// Only Node has these fields
+	if assetType == "Node" {
+		if opts.showCPUCost {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name:        CPUCostCol,
+				Align:       text.AlignRight,
+				AlignFooter: text.AlignRight,
+			})
+		}
 
-	if opts.showGPUCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:        GPUCostCol,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		})
-	}
+		if opts.showGPUCost {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name:        GPUCostCol,
+				Align:       text.AlignRight,
+				AlignFooter: text.AlignRight,
+			})
+		}
 
-	if opts.showMemoryCost {
-		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:        RAMCostCol,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		})
+		if opts.showMemoryCost {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name:        RAMCostCol,
+				Align:       text.AlignRight,
+				AlignFooter: text.AlignRight,
+			})
+		}
 	}
 
 	if projectToMonthlyRate {
@@ -423,16 +426,18 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 		headerRow = append(headerRow, AssetTypeCol)
 	}
 
-	if opts.showCPUCost {
-		headerRow = append(headerRow, CPUCostCol)
-	}
+	if assetType == "Node" {
+		if opts.showCPUCost {
+			headerRow = append(headerRow, CPUCostCol)
+		}
 
-	if opts.showGPUCost {
-		headerRow = append(headerRow, GPUCostCol)
-	}
+		if opts.showGPUCost {
+			headerRow = append(headerRow, GPUCostCol)
+		}
 
-	if opts.showMemoryCost {
-		headerRow = append(headerRow, RAMCostCol)
+		if opts.showMemoryCost {
+			headerRow = append(headerRow, RAMCostCol)
+		}
 	}
 
 	if projectToMonthlyRate {
@@ -499,13 +504,21 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 				summedRAMCost += adjRAMCost
 			}
 
-			adjTotalCost := a.TotalCost() * histScaleFactor
-			cumulativeCost := formatFloat(adjTotalCost)
-			assetRow = append(assetRow, cumulativeCost)
+		default:
 
-			t.AppendRow(assetRow)
-			summedCost += adjTotalCost
+			if opts.showAssetType {
+				assetType := a.Type().String()
+				assetRow = append(assetRow, assetType)
+			}
+
 		}
+
+		adjTotalCost := asset.TotalCost() * histScaleFactor
+		cumulativeCost := formatFloat(adjTotalCost)
+		assetRow = append(assetRow, cumulativeCost)
+
+		t.AppendRow(assetRow)
+		summedCost += adjTotalCost
 
 	}
 
@@ -519,16 +532,18 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 		footerRow = append(footerRow, "")
 	}
 
-	if opts.showCPUCost {
-		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCPUCost)))
-	}
+	if assetType == "Node" {
+		if opts.showCPUCost {
+			footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCPUCost)))
+		}
 
-	if opts.showGPUCost {
-		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedGPUCost)))
-	}
+		if opts.showGPUCost {
+			footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedGPUCost)))
+		}
 
-	if opts.showMemoryCost {
-		footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedRAMCost)))
+		if opts.showMemoryCost {
+			footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedRAMCost)))
+		}
 	}
 
 	footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedCost)))
