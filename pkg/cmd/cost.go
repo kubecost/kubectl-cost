@@ -127,6 +127,7 @@ func NewCmdCost(
 	cmd.AddCommand(newCmdCostClusterManagement(streams))
 	cmd.AddCommand(newCmdCostNetwork(streams))
 	cmd.AddCommand(newCmdCostLoadBalancer(streams))
+	cmd.AddCommand(newCmdCostDisk(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
 

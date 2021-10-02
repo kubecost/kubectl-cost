@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"io"
+	"math"
 	"strings"
 
 	"github.com/jedib0t/go-pretty/v6/table"
@@ -28,6 +29,7 @@ const (
 	CPUCostCol          = "CPU Cost"
 	GPUCostCol          = "GPU Cost"
 	RAMCostCol          = "RAM Cost"
+	DiskBytesCol        = "Bytes (GiB)"
 )
 
 func formatFloat(f float64) string {
@@ -400,6 +402,16 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 		}
 	}
 
+	if assetType == "Disk" {
+		if opts.showDiskBytes {
+			columnConfigs = append(columnConfigs, table.ColumnConfig{
+				Name:        DiskBytesCol,
+				Align:       text.AlignRight,
+				AlignFooter: text.AlignRight,
+			})
+		}
+	}
+
 	if projectToMonthlyRate {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
 			Name:        "Monthly Cost",
@@ -437,6 +449,12 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 
 		if opts.showMemoryCost {
 			headerRow = append(headerRow, RAMCostCol)
+		}
+	}
+
+	if assetType == "Disk" {
+		if opts.showDiskBytes {
+			headerRow = append(headerRow, DiskBytesCol)
 		}
 	}
 
@@ -504,6 +522,18 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 				summedRAMCost += adjRAMCost
 			}
 
+		case *kubecost.Disk:
+
+			if opts.showAssetType {
+				assetType := a.Type().String()
+				assetRow = append(assetRow, assetType)
+			}
+
+			if opts.showDiskBytes {
+				diskBytes := math.Round(a.Bytes()/1024/1024/1024*10) / 10
+				assetRow = append(assetRow, diskBytes)
+			}
+
 		default:
 
 			if opts.showAssetType {
@@ -543,6 +573,12 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 
 		if opts.showMemoryCost {
 			footerRow = append(footerRow, fmt.Sprintf("%s %s", currencyCode, formatFloat(summedRAMCost)))
+		}
+	}
+
+	if assetType == "Disk" {
+		if opts.showDiskBytes {
+			footerRow = append(footerRow, "")
 		}
 	}
 
