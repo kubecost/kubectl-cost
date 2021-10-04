@@ -365,11 +365,14 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 		AutoMerge: true,
 	})
 
-	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name: NameCol,
-	})
+	if assetType != "All" {
+		columnConfigs = append(columnConfigs, table.ColumnConfig{
+			Name: NameCol,
+		})
+	}
 
-	if opts.showAssetType {
+	// Doesn't make sense not to show when agg by asset type
+	if opts.showAssetType || assetType == "All" {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
 			Name: AssetTypeCol,
 		})
@@ -402,6 +405,7 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 		}
 	}
 
+	// Only Disk has these fields
 	if assetType == "Disk" {
 		if opts.showDiskBytes {
 			columnConfigs = append(columnConfigs, table.ColumnConfig{
@@ -432,9 +436,11 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 
 	headerRow = append(headerRow, ClusterCol)
 
-	headerRow = append(headerRow, NameCol)
+	if assetType != "All" {
+		headerRow = append(headerRow, NameCol)
+	}
 
-	if opts.showAssetType {
+	if opts.showAssetType || assetType == "All" {
 		headerRow = append(headerRow, AssetTypeCol)
 	}
 
@@ -493,53 +499,64 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 
 		assetRow = append(assetRow, cluster)
 
-		assetRow = append(assetRow, name)
+		// Workaround: total assets have multiple types present. While we may
+		// want to handle this later, for now just exclude the logic for type-
+		// specific fields from execution
+		if assetType != "All" {
 
-		switch a := asset.(type) {
+			assetRow = append(assetRow, name)
 
-		case *kubecost.Node:
+			switch a := asset.(type) {
 
-			if opts.showAssetType {
-				assetType := a.NodeType
-				assetRow = append(assetRow, assetType)
+			case *kubecost.Node:
+
+				if opts.showAssetType {
+					assetType := a.NodeType
+					assetRow = append(assetRow, assetType)
+				}
+
+				if opts.showCPUCost {
+					adjCPUCost := a.CPUCost * histScaleFactor
+					assetRow = append(assetRow, formatFloat(adjCPUCost))
+					summedCPUCost += adjCPUCost
+				}
+
+				if opts.showGPUCost {
+					adjGPUCost := a.GPUCost * histScaleFactor
+					assetRow = append(assetRow, formatFloat(adjGPUCost))
+					summedGPUCost += adjGPUCost
+				}
+
+				if opts.showMemoryCost {
+					adjRAMCost := a.RAMCost * histScaleFactor
+					assetRow = append(assetRow, formatFloat(adjRAMCost))
+					summedRAMCost += adjRAMCost
+				}
+
+			case *kubecost.Disk:
+
+				if opts.showAssetType {
+					assetType := a.Type().String()
+					assetRow = append(assetRow, assetType)
+				}
+
+				if opts.showDiskBytes {
+					diskBytes := math.Round(a.Bytes()/1024/1024/1024*10) / 10
+					assetRow = append(assetRow, diskBytes)
+				}
+
+			default:
+
+				if opts.showAssetType {
+					assetType := a.Type().String()
+					assetRow = append(assetRow, assetType)
+				}
+
 			}
+		} else {
 
-			if opts.showCPUCost {
-				adjCPUCost := a.CPUCost * histScaleFactor
-				assetRow = append(assetRow, formatFloat(adjCPUCost))
-				summedCPUCost += adjCPUCost
-			}
-
-			if opts.showGPUCost {
-				adjGPUCost := a.GPUCost * histScaleFactor
-				assetRow = append(assetRow, formatFloat(adjGPUCost))
-				summedGPUCost += adjGPUCost
-			}
-
-			if opts.showMemoryCost {
-				adjRAMCost := a.RAMCost * histScaleFactor
-				assetRow = append(assetRow, formatFloat(adjRAMCost))
-				summedRAMCost += adjRAMCost
-			}
-
-		case *kubecost.Disk:
-
-			if opts.showAssetType {
-				assetType := a.Type().String()
-				assetRow = append(assetRow, assetType)
-			}
-
-			if opts.showDiskBytes {
-				diskBytes := math.Round(a.Bytes()/1024/1024/1024*10) / 10
-				assetRow = append(assetRow, diskBytes)
-			}
-
-		default:
-
-			if opts.showAssetType {
-				assetType := a.Type().String()
-				assetRow = append(assetRow, assetType)
-			}
+			assetType := asset.Type().String()
+			assetRow = append(assetRow, assetType)
 
 		}
 
@@ -556,9 +573,11 @@ func makeAssetTable(assetType string, assets map[string]kubecost.Asset, opts dis
 
 	footerRow = append(footerRow, "SUMMED")
 
-	footerRow = append(footerRow, "")
+	if assetType != "All" {
+		footerRow = append(footerRow, "")
+	}
 
-	if opts.showAssetType {
+	if opts.showAssetType || assetType == "All" {
 		footerRow = append(footerRow, "")
 	}
 
