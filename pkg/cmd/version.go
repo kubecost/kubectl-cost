@@ -2,37 +2,30 @@ package cmd
 
 import (
 	"fmt"
+	"runtime/debug"
 
 	"github.com/spf13/cobra"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 )
 
-const versionFormat = `kubectl cost version info
-    Git Commit:   %s
-    Git Branch:   %s
-    Git State:    %s
-    Git Summary:  %s
-    Build Date:   %s
-`
+func newCmdVersion(streams genericclioptions.IOStreams) *cobra.Command {
+	buildInfo, ok := debug.ReadBuildInfo()
+	// Zero out deps information because it isn't helpful for this command.
+	buildInfo.Deps = nil
 
-func newCmdVersion(
-	streams genericclioptions.IOStreams,
-	GitCommit string,
-	GitBranch string,
-	GitState string,
-	GitSummary string,
-	BuildDate string,
-) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "view installed version of kubectl cost",
 		RunE: func(c *cobra.Command, args []string) error {
-			fmt.Fprintf(streams.ErrOut, versionFormat,
-				GitCommit,
-				GitBranch,
-				GitState,
-				GitSummary,
-				BuildDate,
+			if !ok {
+				fmt.Fprintf(streams.ErrOut, "Build info is unavailable in this binary.")
+				return fmt.Errorf("Build info is unavailable in this binary.")
+			}
+
+			fmt.Fprintf(
+				streams.ErrOut,
+				"kubectl cost version/build info:\n%s\n",
+				buildInfo.String(),
 			)
 
 			return nil

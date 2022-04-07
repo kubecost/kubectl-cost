@@ -97,11 +97,6 @@ func NewKubeOptions(streams genericclioptions.IOStreams) *KubeOptions {
 // common.go and the subcommands for the actual functionality.
 func NewCmdCost(
 	streams genericclioptions.IOStreams,
-	GitCommit string,
-	GitBranch string,
-	GitState string,
-	GitSummary string,
-	BuildDate string,
 ) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:          "cost",
@@ -124,7 +119,7 @@ func NewCmdCost(
 	cmd.AddCommand(newCmdCostPod(streams))
 	cmd.AddCommand(newCmdCostNode(streams))
 	cmd.AddCommand(newCmdTUI(streams))
-	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
+	cmd.AddCommand(newCmdVersion(streams))
 
 	return cmd
 }
