@@ -104,8 +104,26 @@ func NewCmdCost(
 	BuildDate string,
 ) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:          "cost",
-		Short:        "View cluster cost information.",
+		Use:   "cost",
+		Short: "View cluster cost information.",
+		Long: `
+kubectl-cost is a CLI frontend for Kubecost, a highly accurate provider of
+Kubernetes cluster cost information and optimization opportunities.
+
+kubectl-cost requires Kubecost to be installed in your Kubernetes cluster. Make
+sure to check out the examples and full set of flags (--help) if you have a
+non-default Kubecost install, like running in a custom namespace!
+
+If you don't have Kubecost installed yet, all it takes is Helm and two minutes:
+
+kubectl create namespace kubecost
+helm repo add kubecost https://kubecost.github.io/cost-analyzer/
+helm install \
+    kubecost \
+    kubecost/cost-analyzer \
+    --namespace kubecost \
+    --set kubecostToken="WljaGFdC5jctl20df98"
+`,
 		Example:      fmt.Sprintf(costExample, "kubectl"),
 		SilenceUsage: true,
 		RunE: func(c *cobra.Command, args []string) error {
