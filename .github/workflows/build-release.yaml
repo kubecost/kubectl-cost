@@ -16,7 +16,7 @@ jobs:
 
       - name: Install govvv
         run: |
-          go get github.com/ahmetb/govvv@master
+          go install github.com/ahmetb/govvv@master
 
       - uses: actions/checkout@v2
 
