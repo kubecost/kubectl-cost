@@ -19,9 +19,7 @@ type CurrencyCodeParameters struct {
 	RestConfig *rest.Config
 	Ctx        context.Context
 
-	KubecostNamespace string
-	ServiceName       string
-	UseProxy          bool
+	QueryBackendOptions
 }
 
 func QueryCurrencyCode(p CurrencyCodeParameters) (string, error) {

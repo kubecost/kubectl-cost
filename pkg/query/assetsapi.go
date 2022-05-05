@@ -19,14 +19,13 @@ type AssetParameters struct {
 	RestConfig *rest.Config
 	Ctx        context.Context
 
-	KubecostNamespace  string
-	ServiceName        string
 	Window             string
 	Aggregate          string
 	DisableAdjustments bool
 	Accumulate         string
-	UseProxy           bool
 	FilterTypes        string
+
+	QueryBackendOptions
 }
 
 // QueryAssets queries /model/assets by proxying a request to Kubecost

@@ -18,8 +18,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
+type CostOptionsTUI struct {
+	query.QueryBackendOptions
+	displayOptions
+}
+
 func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 	kubeO := NewKubeOptions(streams)
+	tuiO := &CostOptionsTUI{}
 
 	cmd := &cobra.Command{
 		Use:   "tui",
@@ -32,11 +38,12 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			return runTUI(kubeO, displayOptions{})
+			return runTUI(kubeO, tuiO.displayOptions, tuiO.QueryBackendOptions)
 		},
 	}
 
 	addKubeOptionsFlags(cmd, kubeO)
+	addQueryBackendOptionsFlags(cmd, &tuiO.QueryBackendOptions)
 
 	return cmd
 }
@@ -152,7 +159,7 @@ func buildWindowDropdown(windowIndex *int, requeryData func()) *tview.DropDown {
 	return windowDropdown
 }
 
-func runTUI(ko *KubeOptions, do displayOptions) error {
+func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) error {
 	app := tview.NewApplication()
 
 	table := tview.NewTable()
@@ -170,11 +177,9 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 	// TODO: use flags for service name
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:        ko.restConfig,
-		Ctx:               queryContext,
-		KubecostNamespace: *ko.configFlags.Namespace,
-		ServiceName:       "kubecost-cost-analyzer",
-		UseProxy:          true,
+		RestConfig:          ko.restConfig,
+		Ctx:                 queryContext,
+		QueryBackendOptions: qo,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
@@ -222,14 +227,12 @@ func runTUI(ko *KubeOptions, do displayOptions) error {
 
 			// TODO: use flags for service name
 			allocs, err := query.QueryAllocation(query.AllocationParameters{
-				RestConfig:        ko.restConfig,
-				Ctx:               queryContext,
-				KubecostNamespace: *ko.configFlags.Namespace,
-				ServiceName:       "kubecost-cost-analyzer",
-				Window:            windowOptions[windowIndex],
-				Aggregate:         aggregation,
-				Accumulate:        "true",
-				UseProxy:          true,
+				RestConfig:          ko.restConfig,
+				Ctx:                 queryContext,
+				Window:              windowOptions[windowIndex],
+				Aggregate:           aggregation,
+				Accumulate:          "true",
+				QueryBackendOptions: qo,
 			})
 
 			allocations = allocs[0]

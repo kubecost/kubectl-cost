@@ -61,25 +61,21 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:        ko.restConfig,
-		Ctx:               context.Background(),
-		KubecostNamespace: *ko.configFlags.Namespace,
-		ServiceName:       no.serviceName,
-		UseProxy:          no.useProxy,
+		RestConfig:          ko.restConfig,
+		Ctx:                 context.Background(),
+		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
 	allocations, err := query.QueryAllocation(query.AllocationParameters{
-		RestConfig:        ko.restConfig,
-		Ctx:               context.Background(),
-		KubecostNamespace: *ko.configFlags.Namespace,
-		ServiceName:       no.serviceName,
-		Window:            no.window,
-		Aggregate:         fmt.Sprintf("label:%s", no.queryLabel),
-		Accumulate:        "true",
-		UseProxy:          no.useProxy,
+		RestConfig:          ko.restConfig,
+		Ctx:                 context.Background(),
+		Window:              no.window,
+		Aggregate:           fmt.Sprintf("label:%s", no.queryLabel),
+		Accumulate:          "true",
+		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to query allocation API: %s", err)
