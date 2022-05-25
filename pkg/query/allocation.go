@@ -77,12 +77,11 @@ type AllocationParameters struct {
 	RestConfig *rest.Config
 	Ctx        context.Context
 
-	KubecostNamespace string
-	ServiceName       string
-	Window            string
-	Aggregate         string
-	Accumulate        string
-	UseProxy          bool
+	Window     string
+	Aggregate  string
+	Accumulate string
+
+	QueryBackendOptions
 }
 
 // QueryAllocation queries /model/allocation by proxying a request to Kubecost

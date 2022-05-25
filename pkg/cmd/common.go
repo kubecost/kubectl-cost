@@ -6,28 +6,19 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/cost-model/pkg/kubecost"
+	"github.com/kubecost/kubectl-cost/pkg/query"
 )
 
 // CostOptions holds common options for querying and displaying
 // data from the kubecost API
 type CostOptions struct {
-	// If set, will proxy a request through the K8s API server
-	// instead of port forwarding.
-	useProxy bool
-
 	window string
 
 	isHistorical bool
 	showAll      bool
 
-	// The name of the cost-analyzer service in the cluster,
-	// in case user is running a non-standard name (like the
-	// staging helm chart). Combines with
-	// commonOptions.configFlags.Namespace to direct the API
-	// request.
-	serviceName string
-
 	displayOptions
+	query.QueryBackendOptions
 }
 
 // With the addition of commands which query the assets API,
@@ -58,8 +49,14 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().BoolVar(&options.showEfficiency, "show-efficiency", true, "show efficiency of cost alongside CPU and memory cost")
 	cmd.Flags().BoolVar(&options.showAssetType, "show-asset-type", false, "show type of assets displayed.")
 	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.")
-	cmd.Flags().StringVar(&options.serviceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
-	cmd.Flags().BoolVar(&options.useProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
+
+	addQueryBackendOptionsFlags(cmd, &options.QueryBackendOptions)
+}
+
+func addQueryBackendOptionsFlags(cmd *cobra.Command, options *query.QueryBackendOptions) {
+	cmd.Flags().StringVar(&options.ServiceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
+	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
+	cmd.Flags().StringVarP(&options.KubecostNamespace, "kubecost-namespace", "N", "kubecost", "The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace.")
 }
 
 // addKubeOptionsFlags sets up the cobra command with the flags from
@@ -78,10 +75,8 @@ func addKubeOptionsFlags(cmd *cobra.Command, ko *KubeOptions) {
 
 	// Reset Namespace to a valid string to avoid a nil pointer
 	// deref.
-	emptyStr := ""
-	ko.configFlags.Namespace = &emptyStr
-
-	cmd.Flags().StringVarP(ko.configFlags.Namespace, "kubecost-namespace", "N", "kubecost", "The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace.")
+	// emptyStr := ""
+	// ko.configFlags.Namespace = &emptyStr
 }
 
 func (co *CostOptions) Complete() {

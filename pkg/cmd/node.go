@@ -51,25 +51,21 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:        ko.restConfig,
-		Ctx:               context.Background(),
-		KubecostNamespace: *ko.configFlags.Namespace,
-		ServiceName:       no.serviceName,
-		UseProxy:          no.useProxy,
+		RestConfig:          ko.restConfig,
+		Ctx:                 context.Background(),
+		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
 	assets, err := query.QueryAssets(query.AssetParameters{
-		RestConfig:        ko.restConfig,
-		Ctx:               context.Background(),
-		KubecostNamespace: *ko.configFlags.Namespace,
-		ServiceName:       no.serviceName,
-		Window:            no.window,
-		Accumulate:        "true",
-		UseProxy:          no.useProxy,
-		FilterTypes:       "Node",
+		RestConfig:          ko.restConfig,
+		Ctx:                 context.Background(),
+		Window:              no.window,
+		Accumulate:          "true",
+		FilterTypes:         "Node",
+		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to query allocation API: %s", err)
