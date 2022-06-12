@@ -27,6 +27,7 @@ func newCmdCostDeployment(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "deployment",
 		Short: "view cost information aggregated by deployment",
+		Aliases: []string{"deploy"},
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
 				return err
