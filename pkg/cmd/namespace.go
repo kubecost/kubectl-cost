@@ -24,6 +24,7 @@ func newCmdCostNamespace(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "namespace",
 		Short: "view cost information aggregated by namespace",
+		Aliases: []string{"ns"},
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
 				return err

@@ -26,6 +26,7 @@ func newCmdCostPod(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "pod",
 		Short: "view cost information aggregated by pod",
+		Aliases: []string{"po"},
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
 				return err

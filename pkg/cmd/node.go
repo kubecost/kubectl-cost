@@ -24,6 +24,7 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "node",
 		Short: "view cost information by nodes",
+		Aliases: []string{"no"},
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
 				return err
