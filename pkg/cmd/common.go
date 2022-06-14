@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kubecost/cost-model/pkg/kubecost"
 	"github.com/kubecost/kubectl-cost/pkg/query"
+	"github.com/kubecost/opencost/pkg/kubecost"
 )
 
 // CostOptions holds common options for querying and displaying
