@@ -135,11 +135,32 @@ helm install \
 	// for the subcommands
 	cmd.SilenceUsage = false
 
-	cmd.AddCommand(newCmdCostNamespace(streams))
-	cmd.AddCommand(newCmdCostDeployment(streams))
-	cmd.AddCommand(newCmdCostController(streams))
+	// TODO: disable cluster in single-cluster case
+	cmd.AddCommand(buildStandardAggregatedAllocationCommand(streams,
+		"namespace",
+		[]string{"ns"},
+		[]string{"cluster", "namespace"},
+		false,
+	))
+	cmd.AddCommand(buildStandardAggregatedAllocationCommand(streams,
+		"deployment",
+		[]string{"deploy"},
+		[]string{"cluster", "namespace", "deployment"},
+		true,
+	))
+	cmd.AddCommand(buildStandardAggregatedAllocationCommand(streams,
+		"controller",
+		nil,
+		[]string{"cluster", "namespace", "controller"},
+		true,
+	))
+	cmd.AddCommand(buildStandardAggregatedAllocationCommand(streams,
+		"pod",
+		[]string{"po"},
+		[]string{"cluster", "namespace", "pod"},
+		true,
+	))
 	cmd.AddCommand(newCmdCostLabel(streams))
-	cmd.AddCommand(newCmdCostPod(streams))
 	cmd.AddCommand(newCmdCostNode(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))

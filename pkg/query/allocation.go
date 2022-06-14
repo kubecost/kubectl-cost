@@ -16,43 +16,13 @@ const (
 	idleString = "__idle__"
 )
 
-// edits allocation map without copying
-func filterAllocations(allocations map[string]kubecost.Allocation, namespace string) error {
-	// empty filter parameter means no filtering occurs
-	if namespace == "" {
-		return nil
-	}
-
-	for name, _ := range allocations {
-		// idle allocation has no namespace
-		if name == idleString {
-			delete(allocations, name)
-		} else {
-			_, _, allocNamespace, _, _, err := parseAllocationName(name)
-			if err != nil {
-				return fmt.Errorf("failed to parse allocation name: %s", err)
-			}
-			if allocNamespace != namespace {
-				delete(allocations, name)
-			}
-		}
-	}
-
-	return nil
-}
-
+// Summary allocations do not marshal the Properties field, so we parse the
+// relevant data from the SummaryAllocation name.
 func parseAllocationName(allocationName string) (cluster, node, namespace, pod, container string, err error) {
-
 	if allocationName == idleString {
 		return "", "", "", "", "", fmt.Errorf("can't parse allocation information for special idle case")
 	}
 
-	// We use the allocation name instead of properties
-	// because a recent performance-motivated change
-	// that means properties is not guaranteed to have
-	// information beyond cluster and node. In the future,
-	// we should be able to rely on properties to have
-	// accurate information.
 	allocNameSplit := strings.Split(allocationName, "/")
 
 	if len(allocNameSplit) != 5 {
@@ -68,40 +38,24 @@ func parseAllocationName(allocationName string) (cluster, node, namespace, pod, 
 	return cluster, node, namespace, pod, container, nil
 }
 
-type allocationResponse struct {
-	Code int                              `json:"code"`
-	Data []map[string]kubecost.Allocation `json:"data"`
-}
-
 type AllocationParameters struct {
 	RestConfig *rest.Config
 	Ctx        context.Context
 
-	Window     string
-	Aggregate  string
-	Accumulate string
+	QueryParams map[string]string
 
 	QueryBackendOptions
 }
 
-// QueryAllocation queries /model/allocation by proxying a request to Kubecost
-// through the Kubernetes API server if useProxy is true or, if it isn't, by
-// temporarily port forwarding to a Kubecost pod.
-func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, error) {
+type summaryAllocationResponse struct {
+	Data kubecost.SummaryAllocationSetRange `json:"data"`
+}
 
-	requestParams := map[string]string{
-		// if we set this to false, output would be
-		// per-day (we could use it in a more
-		// complicated way to build in-terminal charts)
-		"accumulate": p.Accumulate,
-		"window":     p.Window,
-	}
-
-	if p.Aggregate != "" {
-		requestParams["aggregate"] = p.Aggregate
-	}
-
-	var bytes []byte
+// QuerySummaryAllocation queries /model/allocation/summary by proxying a
+// request to Kubecost through the Kubernetes API server if useProxy is true or,
+// if it isn't, by temporarily port forwarding to a Kubecost pod.
+func QuerySummaryAllocation(p AllocationParameters) (*kubecost.SummaryAllocationSetRange, error) {
+	var responseBytes []byte
 	var err error
 	if p.UseProxy {
 		clientset, err := kubernetes.NewForConfig(p.RestConfig)
@@ -109,22 +63,23 @@ func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, 
 			return nil, fmt.Errorf("failed to create clientset: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/allocation", requestParams).DoRaw(p.Ctx)
+		responseBytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/allocation/summary", p.QueryParams).DoRaw(p.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, responseBytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/allocation", requestParams, p.Ctx)
+		responseBytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/allocation/summary", p.QueryParams, p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to port forward query: %s", err)
 		}
 	}
 
-	var ar allocationResponse
-	err = json.Unmarshal(bytes, &ar)
+	// The response is wrapped in a JSON like this: {code: XXXX, data: SASR}
+	var sas summaryAllocationResponse
+	err = json.Unmarshal(responseBytes, &sas)
 	if err != nil {
-		return ar.Data, fmt.Errorf("failed to unmarshal allocation response: %s", err)
+		return nil, fmt.Errorf("failed to unmarshal allocation response: %s", err)
 	}
 
-	return ar.Data, nil
+	return &sas.Data, nil
 }

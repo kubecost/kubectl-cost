@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
@@ -60,6 +61,8 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 
 func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 
+	aggregation := []string{"cluster", fmt.Sprintf("label:%s", no.queryLabel)}
+
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
@@ -69,12 +72,14 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
-	allocations, err := query.QueryAllocation(query.AllocationParameters{
-		RestConfig:          ko.restConfig,
-		Ctx:                 context.Background(),
-		Window:              no.window,
-		Aggregate:           fmt.Sprintf("label:%s", no.queryLabel),
-		Accumulate:          "true",
+	allocations, err := query.QuerySummaryAllocation(query.AllocationParameters{
+		RestConfig: ko.restConfig,
+		Ctx:        context.Background(),
+		QueryParams: map[string]string{
+			"window":     no.window,
+			"aggregate":  strings.Join(aggregation, ","),
+			"accumulate": "true",
+		},
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
@@ -82,7 +87,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 	}
 
 	// Use allocations[0] because the query accumulates to a single result
-	writeAllocationTable(ko.Out, "Label", allocations[0], no.displayOptions, currencyCode, false, !no.isHistorical)
+	writeAllocationTable(ko.Out, aggregation, allocations.SummaryAllocationSets[0].SummaryAllocations, no.displayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }
