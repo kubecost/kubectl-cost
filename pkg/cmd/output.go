@@ -185,6 +185,10 @@ func makeAllocationTable(aggregation []string, allocations map[string]*kubecost.
 			Name: "Total Cost (All)",
 			Mode: table.DscNumeric,
 		},
+		{
+			Name: "Monthly Rate (All)",
+			Mode: table.DscNumeric,
+		},
 	})
 
 	var summedCost float64
