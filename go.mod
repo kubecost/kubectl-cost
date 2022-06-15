@@ -6,7 +6,7 @@ require (
 	github.com/gdamore/tcell/v2 v2.0.1-0.20201017141208-acf90d56d591
 	github.com/imdario/mergo v0.3.11 // indirect
 	github.com/jedib0t/go-pretty/v6 v6.1.0
-	github.com/kubecost/opencost v1.94.3
+	github.com/kubecost/opencost v1.91.0-rc.0.0.20220615195911-1b83096973cb
 	github.com/rivo/tview v0.0.0-20210216210747-c3311ba972c1
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5

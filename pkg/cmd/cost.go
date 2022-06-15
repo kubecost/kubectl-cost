@@ -8,6 +8,8 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/spf13/cobra"
+
+	"github.com/kubecost/opencost/pkg/log"
 )
 
 // Note that the auth/gcp import is necessary https://github.com/kubernetes/client-go/issues/242
@@ -129,6 +131,14 @@ helm install \
 		RunE: func(c *cobra.Command, args []string) error {
 			return fmt.Errorf("please use a subcommand")
 		},
+	}
+
+	cmd.PersistentFlags().String("log-level", "info", "Set the log level from one of: 'trace', 'debug', 'info', 'warn', 'error'.")
+
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		log.InitLoggingFromFlags(cmd.Flag("log-level"), nil, nil)
+
+		return nil
 	}
 
 	// Show usage on error because this command is just a base
