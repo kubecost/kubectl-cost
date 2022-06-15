@@ -6,6 +6,7 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
@@ -22,8 +23,8 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 	assetsO := &CostOptionsNode{}
 
 	cmd := &cobra.Command{
-		Use:   "node",
-		Short: "view cost information by nodes",
+		Use:     "node",
+		Short:   "view cost information by nodes",
 		Aliases: []string{"no"},
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
@@ -57,7 +58,8 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Warn().Str("err", err.Error()).Msg("failed to get currency code, displaying as empty string")
+		currencyCode = ""
 	}
 
 	assets, err := query.QueryAssets(query.AssetParameters{

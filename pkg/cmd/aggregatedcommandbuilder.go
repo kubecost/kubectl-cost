@@ -7,6 +7,7 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
@@ -57,7 +58,8 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 		QueryBackendOptions: co.QueryBackendOptions,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Warn().Str("err", err.Error()).Msg("failed to get currency code, displaying as empty string")
+		currencyCode = ""
 	}
 
 	allocations, err := query.QueryAllocation(query.AllocationParameters{

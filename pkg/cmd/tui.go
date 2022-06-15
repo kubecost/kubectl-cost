@@ -180,14 +180,14 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 
 	queryContext, queryCancel := context.WithCancel(context.Background())
 
-	// TODO: use flags for service name
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		RestConfig:          ko.restConfig,
 		Ctx:                 queryContext,
 		QueryBackendOptions: qo,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Warn().Str("err", err.Error()).Msg("failed to get currency code, displaying as empty string")
+		currencyCode = ""
 	}
 
 	redrawTable := func() {
