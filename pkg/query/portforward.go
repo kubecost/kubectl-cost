@@ -16,6 +16,8 @@ import (
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
+
+	"github.com/rs/zerolog/log"
 )
 
 // reference: https://stackoverflow.com/questions/41545123/how-to-get-pods-under-the-service-with-client-go-the-client-library-of-kubernete
@@ -56,7 +58,27 @@ func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, 
 		return nil, fmt.Errorf("no pods for service %s in namespace %s", serviceName, namespace)
 	}
 
-	podToForward := pods.Items[0]
+	// It's possible that there can be pods matching the service which are in a
+	// non-Ready (e.g. Error, Completed) state. Make sure we select a Ready pod.
+	var podToForward *corev1.Pod
+	for _, pod := range pods.Items {
+		pod := pod
+		log.Debug().
+			Str("pod name", pod.Name).
+			Msg("checking readiness")
+		if isPodReady(&pod) {
+			podToForward = &pod
+			break
+		}
+	}
+
+	if podToForward == nil {
+		return nil, fmt.Errorf("couldn't find a Pod which is Ready to serve the query")
+	}
+
+	log.Debug().Str("pod name", podToForward.Name).Msg("selected pod to forward")
+
+	// podToForward := pods.Items[0]
 
 	// Second: build the port forwarding config
 	// https://stackoverflow.com/questions/59027739/upgrading-connection-error-in-port-forwarding-via-client-go
