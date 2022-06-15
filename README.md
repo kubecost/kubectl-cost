@@ -2,6 +2,8 @@
 
 `kubectl-cost` is a [kubectl plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/) that provides easy CLI access to Kubernetes cost allocation metrics via the [kubecost APIs](https://github.com/kubecost/docs/blob/master/apis.md). It allows developers, devops, and others to quickly determine the cost & efficiency for any Kubernetes workload.
 
+> If you use [OpenCost](https://github.com/kubecost/opencost), most of `kubectl cost` should work! You may have to fiddle with the service name, path, and port flags. Let us know how it goes, and open an issue if you encounter any problems!
+
 <img src="assets/regular.gif" alt="Standard CLI Usage" width="600">
 
 <img src="assets/tui.gif" alt="TUI Usage" width="600">
@@ -210,6 +212,10 @@ The following flags modify the behavior of the subcommands:
       --token string                   Bearer token for authentication to the API server
       --user string                    The name of the kubeconfig user to use
 ```
+
+## If something breaks
+
+`kubectl cost` logs some of its behavior at the `debug` log level. If something isn't working as you'd expect, try setting `--log-level debug` before opening a bug report.
 
 ## Implementation Quirks
 

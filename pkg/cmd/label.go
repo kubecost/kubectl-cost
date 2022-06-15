@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
+	"github.com/kubecost/opencost/pkg/log"
 )
 
 // CostOptionsLabel contains the standard CostOptions and any
@@ -69,7 +70,8 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Debugf("failed to get currency code, displaying as empty string: %s", err)
+		currencyCode = ""
 	}
 
 	allocations, err := query.QueryAllocation(query.AllocationParameters{

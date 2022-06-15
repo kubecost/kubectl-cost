@@ -186,7 +186,8 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 		QueryBackendOptions: qo,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Debugf("failed to get currency code, displaying as empty string: %s", err)
+		currencyCode = ""
 	}
 
 	redrawTable := func() {
