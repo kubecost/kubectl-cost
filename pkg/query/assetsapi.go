@@ -55,12 +55,12 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 			return nil, fmt.Errorf("failed to create clientset: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/assets", requestParams).DoRaw(p.Ctx)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, string(p.ServicePort), "/model/assets", requestParams).DoRaw(p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/assets", requestParams, p.Ctx)
+		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/assets", p.ServicePort, requestParams, p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to port forward query: %s", err)
 		}

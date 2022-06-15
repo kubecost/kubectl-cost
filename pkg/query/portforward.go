@@ -46,7 +46,7 @@ func getServicePods(restConfig *rest.Config, namespace, serviceName string, ctx 
 // portForwardedQueryService finds the pods associated with the given namespace and service,
 // port forwards to them, and executes a GET request to the endpoint with the specified params.
 // It then stops the port forward.
-func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, endpoint string, params map[string]string, ctx context.Context) ([]byte, error) {
+func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, endpoint string, port int, params map[string]string, ctx context.Context) ([]byte, error) {
 	// First: find a pod to port forward to
 	pods, err := getServicePods(restConfig, namespace, serviceName, ctx)
 	if err != nil {
@@ -74,8 +74,6 @@ func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, 
 	readyCh := make(chan struct{})
 	stopCh := make(chan struct{}, 1)
 
-	targetPort := 9090
-
 	transport, upgrader, err := spdy.RoundTripperFor(restConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create round tripper for rest config: %s", err)
@@ -90,7 +88,7 @@ func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, 
 
 	fw, err := portforward.New(
 		dialer,
-		[]string{fmt.Sprintf("%d:%d", 0, targetPort)},
+		[]string{fmt.Sprintf("%d:%d", 0, port)},
 		stopCh,
 		readyCh,
 		buffOut,

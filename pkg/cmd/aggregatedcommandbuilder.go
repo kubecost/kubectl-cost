@@ -60,7 +60,7 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
-	allocations, err := query.QuerySummaryAllocation(query.AllocationParameters{
+	allocations, err := query.QueryAllocation(query.AllocationParameters{
 		RestConfig: ko.restConfig,
 		Ctx:        context.Background(),
 		QueryParams: map[string]string{
@@ -75,7 +75,7 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 		return fmt.Errorf("failed to query allocation API: %s", err)
 	}
 
-	writeAllocationTable(ko.Out, aggregation, allocations.SummaryAllocationSets[0].SummaryAllocations, co.displayOptions, currencyCode, !co.isHistorical)
+	writeAllocationTable(ko.Out, aggregation, allocations[0], co.displayOptions, currencyCode, !co.isHistorical)
 
 	return nil
 }

@@ -72,7 +72,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 		return fmt.Errorf("failed to get currency code: %s", err)
 	}
 
-	allocations, err := query.QuerySummaryAllocation(query.AllocationParameters{
+	allocations, err := query.QueryAllocation(query.AllocationParameters{
 		RestConfig: ko.restConfig,
 		Ctx:        context.Background(),
 		QueryParams: map[string]string{
@@ -87,7 +87,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 	}
 
 	// Use allocations[0] because the query accumulates to a single result
-	writeAllocationTable(ko.Out, aggregation, allocations.SummaryAllocationSets[0].SummaryAllocations, no.displayOptions, currencyCode, !no.isHistorical)
+	writeAllocationTable(ko.Out, aggregation, allocations[0], no.displayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }

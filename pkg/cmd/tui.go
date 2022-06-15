@@ -169,7 +169,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 
 	table := tview.NewTable()
 
-	var allocations map[string]*kubecost.SummaryAllocation
+	var allocations map[string]kubecost.Allocation
 	var allocMutex sync.Mutex
 	var lastUpdated time.Time
 
@@ -231,7 +231,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 			queryContext, queryCancel = context.WithCancel(context.Background())
 
 			// TODO: use flags for service name
-			allocs, err := query.QuerySummaryAllocation(query.AllocationParameters{
+			allocs, err := query.QueryAllocation(query.AllocationParameters{
 				RestConfig: ko.restConfig,
 				Ctx:        queryContext,
 				QueryParams: map[string]string{
@@ -242,7 +242,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 				QueryBackendOptions: qo,
 			})
 
-			allocations = allocs.SummaryAllocationSets[0].SummaryAllocations
+			allocations = allocs[0]
 
 			if err != nil && strings.Contains(err.Error(), "context canceled") {
 				// do nothing, because the context got canceled to favor a more

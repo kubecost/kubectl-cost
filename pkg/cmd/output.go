@@ -34,14 +34,14 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, aggregation []string, allocations map[string]*kubecost.SummaryAllocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
+func writeAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
 	t := makeAllocationTable(aggregation, allocations, opts, currencyCode, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAllocationTable(aggregation []string, allocations map[string]*kubecost.SummaryAllocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+func makeAllocationTable(aggregation []string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -257,7 +257,7 @@ func makeAllocationTable(aggregation []string, allocations map[string]*kubecost.
 		}
 
 		if opts.showPVCost {
-			adjPVCost := alloc.PVCost * histScaleFactor
+			adjPVCost := alloc.PVCost() * histScaleFactor
 			allocRow = append(allocRow, formatFloat(adjPVCost))
 			summedPV += adjPVCost
 		}
