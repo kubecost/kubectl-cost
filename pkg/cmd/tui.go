@@ -10,10 +10,11 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
+	"github.com/rs/zerolog/log"
+
 	"github.com/gdamore/tcell/v2"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/kubecost/opencost/pkg/kubecost"
-	"github.com/kubecost/opencost/pkg/log"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 )
@@ -202,7 +203,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 
 		err := setTableFromCSV(table, serializedTable)
 		if err != nil {
-			log.Errorf("failed to set table from CSV: %s", err)
+			log.Error().Msgf("failed to set table from CSV: %s", err)
 		}
 
 		table.SetTitle(fmt.Sprintf(" %s Monthly Rate - Window %s - Updated %02d:%02d:%02d ", aggregation, windowOptions[windowIndex], lastUpdated.Hour(), lastUpdated.Minute(), lastUpdated.Second()))
@@ -247,7 +248,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 				// do nothing, because the context got canceled to favor a more
 				// recent window request from the user
 			} else if err != nil {
-				log.Errorf("failed to query agg cost model: %s", err)
+				log.Error().Msgf("failed to query agg cost model: %s", err)
 			} else {
 				lastUpdated = time.Now()
 				app.QueueUpdateDraw(func() {

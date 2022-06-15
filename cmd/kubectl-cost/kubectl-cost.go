@@ -5,6 +5,7 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/pflag"
 
 	"github.com/kubecost/kubectl-cost/pkg/cmd"
@@ -26,6 +27,19 @@ type assetsQuery struct {
 
 func main() {
 	flags := pflag.NewFlagSet("kubectl-ns", pflag.ExitOnError)
+	logLevel := flags.String("log-level", "info", "Set the log level. Options: 'trace', 'debug', 'info', 'warn', 'error'.")
+	if logLevel == nil {
+	} else if *logLevel == "trace" {
+		zerolog.SetGlobalLevel(zerolog.TraceLevel)
+	} else if *logLevel == "debug" {
+		zerolog.SetGlobalLevel(zerolog.DebugLevel)
+	} else if *logLevel == "info" {
+		zerolog.SetGlobalLevel(zerolog.InfoLevel)
+	} else if *logLevel == "warn" {
+		zerolog.SetGlobalLevel(zerolog.WarnLevel)
+	} else if *logLevel == "error" {
+		zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+	}
 	pflag.CommandLine = flags
 
 	root := cmd.NewCmdCost(
