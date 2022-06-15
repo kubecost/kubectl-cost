@@ -8,8 +8,6 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/rs/zerolog/log"
-
 	"github.com/kubecost/opencost/pkg/kubecost"
 )
 
