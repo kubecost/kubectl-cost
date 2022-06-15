@@ -34,32 +34,24 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writeAllocationTable(out io.Writer, allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, projectToMonthlyRate bool) {
-	t := makeAllocationTable(allocationType, allocations, opts, currencyCode, showNamespace, projectToMonthlyRate)
+func writeAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
+	t := makeAllocationTable(aggregation, allocations, opts, currencyCode, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makeAllocationTable(allocationType string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, showNamespace bool, projectToMonthlyRate bool) table.Writer {
+func makeAllocationTable(aggregation []string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
 
-	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:      ClusterCol,
-		AutoMerge: true,
-	})
-	if showNamespace {
+	for _, aggField := range aggregation {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
-			Name:      NamespaceCol,
+			Name:      strings.Title(aggField),
 			AutoMerge: true,
 		})
 	}
-	columnConfigs = append(columnConfigs, table.ColumnConfig{
-		Name:      allocationType,
-		AutoMerge: true,
-	})
 
 	if opts.showCPUCost {
 		columnConfigs = append(columnConfigs, table.ColumnConfig{
@@ -139,11 +131,9 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 
 	headerRow := table.Row{}
 
-	headerRow = append(headerRow, ClusterCol)
-	if showNamespace {
-		headerRow = append(headerRow, NamespaceCol)
+	for _, aggField := range aggregation {
+		headerRow = append(headerRow, strings.Title(aggField))
 	}
-	headerRow = append(headerRow, allocationType)
 
 	if opts.showCPUCost {
 		headerRow = append(headerRow, CPUCol)
@@ -195,6 +185,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 			Name: "Total Cost (All)",
 			Mode: table.DscNumeric,
 		},
+		{
+			Name: "Monthly Rate (All)",
+			Mode: table.DscNumeric,
+		},
 	})
 
 	var summedCost float64
@@ -221,17 +215,22 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 
 		}
 
-		cluster := alloc.Properties.Cluster
-		allocName := alloc.Name
-
 		allocRow := table.Row{}
 
-		allocRow = append(allocRow, cluster)
-		if showNamespace {
-			ns := alloc.Properties.Namespace
-			allocRow = append(allocRow, ns)
+		if alloc.Name == "__idle__" {
+			for range aggregation {
+				allocRow = append(allocRow, "__idle__")
+			}
+		} else {
+			splitName := strings.Split(alloc.Name, "/")
+			if len(splitName) != len(aggregation) {
+				panic(fmt.Sprintf("name '%s' split into '%+v' (len %d) should have the same number of fields as aggregation '%+v' (len %d)", alloc.Name, splitName, len(splitName), aggregation, len(aggregation)))
+			}
+
+			for _, fieldValue := range splitName {
+				allocRow = append(allocRow, fieldValue)
+			}
 		}
-		allocRow = append(allocRow, allocName)
 
 		if opts.showCPUCost {
 			adjCPUCost := alloc.CPUCost * histScaleFactor
@@ -296,10 +295,10 @@ func makeAllocationTable(allocationType string, allocations map[string]kubecost.
 	footerRow := table.Row{}
 
 	footerRow = append(footerRow, "SUMMED")
-	if showNamespace {
+
+	for i := 0; i < len(aggregation)-1; i++ {
 		footerRow = append(footerRow, "")
 	}
-	footerRow = append(footerRow, "")
 
 	if opts.showCPUCost {
 		footerRow = append(footerRow, formatFloat(summedCPU))

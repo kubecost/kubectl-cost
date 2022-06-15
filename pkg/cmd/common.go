@@ -12,7 +12,8 @@ import (
 // CostOptions holds common options for querying and displaying
 // data from the kubecost API
 type CostOptions struct {
-	window string
+	window          string
+	filterNamespace string
 
 	isHistorical bool
 	showAll      bool

@@ -131,7 +131,7 @@ func populateDisplayOptionsList(displayOptionsList *tview.List, do *displayOptio
 		AddItem("ESC to change other options", "", '-', nil)
 }
 
-func buildAggregateByDropdown(aggregation *string, requeryData func()) *tview.DropDown {
+func buildAggregateByDropdown(aggregation *[]string, requeryData func()) *tview.DropDown {
 	aggregationDropdown := tview.NewDropDown().SetLabel("Aggregate by: ")
 	aggregationStrings := []string{}
 	for agg, _ := range aggregationOptions {
@@ -139,7 +139,11 @@ func buildAggregateByDropdown(aggregation *string, requeryData func()) *tview.Dr
 	}
 
 	aggregationEvent := func(selection string, index int) {
-		*aggregation = selection
+		if selection == "namespace" {
+			*aggregation = []string{"cluster", "namespace"}
+		} else {
+			*aggregation = []string{"cluster", "namespace", selection}
+		}
 		requeryData()
 	}
 
@@ -171,7 +175,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 	var err error
 
 	var windowIndex int = 0
-	var aggregation string = "namespace"
+	aggregation := []string{"cluster", "namespace"}
 
 	queryContext, queryCancel := context.WithCancel(context.Background())
 
@@ -193,7 +197,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 		// table here. This TUI library needs us to build tables from a 2D array.
 		// The CSV-rendered (string) go-pretty table, nicely sorted and everything,
 		// is parsed into a 2D array and then the TUI table is built from that.
-		tWriter := makeAllocationTable(aggregation, allocations, do, currencyCode, false, true)
+		tWriter := makeAllocationTable(aggregation, allocations, do, currencyCode, true)
 		serializedTable := tWriter.RenderCSV()
 
 		err := setTableFromCSV(table, serializedTable)
@@ -227,11 +231,13 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 
 			// TODO: use flags for service name
 			allocs, err := query.QueryAllocation(query.AllocationParameters{
-				RestConfig:          ko.restConfig,
-				Ctx:                 queryContext,
-				Window:              windowOptions[windowIndex],
-				Aggregate:           aggregation,
-				Accumulate:          "true",
+				RestConfig: ko.restConfig,
+				Ctx:        queryContext,
+				QueryParams: map[string]string{
+					"window":     windowOptions[windowIndex],
+					"aggregate":  strings.Join(aggregation, ","),
+					"accumulate": "true",
+				},
 				QueryBackendOptions: qo,
 			})
 
