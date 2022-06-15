@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 
-	"github.com/kubecost/cost-model/pkg/kubecost"
+	"github.com/kubecost/opencost/pkg/kubecost"
 )
 
 const (

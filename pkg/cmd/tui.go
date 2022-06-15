@@ -11,9 +11,9 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
 	"github.com/gdamore/tcell/v2"
-	"github.com/kubecost/cost-model/pkg/kubecost"
-	"github.com/kubecost/cost-model/pkg/log"
 	"github.com/kubecost/kubectl-cost/pkg/query"
+	"github.com/kubecost/opencost/pkg/kubecost"
+	"github.com/kubecost/opencost/pkg/log"
 	"github.com/rivo/tview"
 	"github.com/spf13/cobra"
 )
