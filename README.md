@@ -186,6 +186,7 @@ The following flags modify the behavior of the subcommands:
 -n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
 -N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
     --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
+    --log-level string Set the log level. Options: 'trace', 'debug', 'info', 'warn', 'error'. (default "info")
 ```
 
 

@@ -7,6 +7,7 @@ import (
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/rest"
 
+	"github.com/rs/zerolog"
 	"github.com/spf13/cobra"
 )
 
@@ -129,6 +130,27 @@ helm install \
 		RunE: func(c *cobra.Command, args []string) error {
 			return fmt.Errorf("please use a subcommand")
 		},
+	}
+
+	logLevel := cmd.PersistentFlags().String("log-level", "info", "Set the log level. Options: 'trace', 'debug', 'info', 'warn', 'error'.")
+
+	// https://le-gall.bzh/post/go/integrating-logrus-with-cobra/
+	//  https://droctothorpe.github.io/posts/2020/07/leveled-logs-with-cobra-and-logrus/
+	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
+		if logLevel == nil {
+		} else if *logLevel == "trace" {
+			zerolog.SetGlobalLevel(zerolog.TraceLevel)
+		} else if *logLevel == "debug" {
+			zerolog.SetGlobalLevel(zerolog.DebugLevel)
+		} else if *logLevel == "info" {
+			zerolog.SetGlobalLevel(zerolog.InfoLevel)
+		} else if *logLevel == "warn" {
+			zerolog.SetGlobalLevel(zerolog.WarnLevel)
+		} else if *logLevel == "error" {
+			zerolog.SetGlobalLevel(zerolog.ErrorLevel)
+		}
+
+		return nil
 	}
 
 	// Show usage on error because this command is just a base

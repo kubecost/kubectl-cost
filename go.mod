@@ -8,6 +8,7 @@ require (
 	github.com/jedib0t/go-pretty/v6 v6.1.0
 	github.com/kubecost/opencost v1.94.3
 	github.com/rivo/tview v0.0.0-20210216210747-c3311ba972c1
+	github.com/rs/zerolog v1.27.0
 	github.com/spf13/cobra v1.2.1
 	github.com/spf13/pflag v1.0.5
 	golang.org/x/time v0.0.0-20201208040808-7e3f01d25324 // indirect
