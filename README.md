@@ -182,8 +182,10 @@ The following flags modify the behavior of the subcommands:
     --show-shared                 show shared cost data
 -A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.
     --window string               The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here. (default "1d")
-    --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
 -n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
+    --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
+    --service-port int               The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003. (default 9090)
+    --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
 -N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
     --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
 ```
