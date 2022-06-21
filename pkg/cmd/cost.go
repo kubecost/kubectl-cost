@@ -8,6 +8,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 
 	"github.com/kubecost/opencost/pkg/log"
 )
@@ -135,8 +136,10 @@ helm install \
 
 	cmd.PersistentFlags().String("log-level", "info", "Set the log level from one of: 'trace', 'debug', 'info', 'warn', 'error'.")
 
+	viper.BindPFlag("log-level", cmd.Flag("log-level"))
+
 	cmd.PersistentPreRunE = func(cmd *cobra.Command, args []string) error {
-		log.InitLoggingFromFlags(cmd.Flag("log-level"), nil, nil)
+		log.InitLogging(false)
 
 		return nil
 	}
