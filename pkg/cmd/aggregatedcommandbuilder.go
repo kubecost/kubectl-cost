@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
+	"github.com/kubecost/opencost/pkg/log"
 )
 
 func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStreams, commandName string, commandAliases []string, aggregation []string, enableNamespaceFilter bool) *cobra.Command {
@@ -57,7 +58,8 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 		QueryBackendOptions: co.QueryBackendOptions,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Debugf("failed to get currency code, displaying as empty string: %s", err)
+		currencyCode = ""
 	}
 
 	allocations, err := query.QueryAllocation(query.AllocationParameters{

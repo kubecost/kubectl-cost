@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
+	"github.com/kubecost/opencost/pkg/log"
 )
 
 // CostOptionsNode contains the standard CostOptions and any
@@ -57,7 +58,8 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
 	if err != nil {
-		return fmt.Errorf("failed to get currency code: %s", err)
+		log.Debugf("failed to get currency code, displaying as empty string: %s", err)
+		currencyCode = ""
 	}
 
 	assets, err := query.QueryAssets(query.AssetParameters{

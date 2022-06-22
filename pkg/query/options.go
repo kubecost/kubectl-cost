@@ -14,6 +14,12 @@ type QueryBackendOptions struct {
 	// request.
 	ServiceName string
 
+	// The port at which the Service should be queried
+	ServicePort int
+
 	// The namespace in which Kubecost is running
 	KubecostNamespace string
+
+	// The path at which can serve Allocation queries, e.g. "/model/allocation"
+	AllocationPath string
 }

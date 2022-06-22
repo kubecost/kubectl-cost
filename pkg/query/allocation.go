@@ -38,12 +38,12 @@ func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, 
 			return nil, fmt.Errorf("failed to create clientset for proxied query: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, "9090", "/model/allocation", p.QueryParams).DoRaw(p.Ctx)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, string(p.ServicePort), p.AllocationPath, p.QueryParams).DoRaw(p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/allocation", p.QueryParams, p.Ctx)
+		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, p.AllocationPath, p.ServicePort, p.QueryParams, p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to port forward query: %s", err)
 		}
