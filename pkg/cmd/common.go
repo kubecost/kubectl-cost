@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -22,6 +23,10 @@ type CostOptions struct {
 	displayOptions
 	query.QueryBackendOptions
 }
+
+const (
+	envPrefix = "KUBECTL_COST"
+)
 
 // With the addition of commands which query the assets API,
 // some of these don't apply to all commands. However, as they
@@ -58,13 +63,17 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 func addQueryBackendOptionsFlags(cmd *cobra.Command, options *query.QueryBackendOptions) {
 	cmd.Flags().StringVar(&options.ServiceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
 	cmd.Flags().IntVar(&options.ServicePort, "service-port", 9090, "The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003.")
+	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
 	cmd.Flags().StringVarP(&options.KubecostNamespace, "kubecost-namespace", "N", "kubecost", "The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace.")
 	cmd.Flags().StringVar(&options.AllocationPath, "allocation-path", "/model/allocation", "URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute'")
 
 	//Check if environment variable KUBECTL_COST_USE_PROXY is set, it defaults to false
 	v := viper.New()
+	v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
 	options.UseProxy = v.GetBool("KUBECTL_COST_USE_PROXY")
+	bindAFlagToViperEnv(cmd, v, "use-proxy")
+	fmt.Printf("%v", options.UseProxy)
 }
 
 // addKubeOptionsFlags sets up the cobra command with the flags from
@@ -108,4 +117,16 @@ func (co *CostOptions) Validate() error {
 	}
 
 	return nil
+}
+
+// Binds the flag with viper environment variable and ensures the order of precendence
+// command line > environment variable > default value
+func bindAFlagToViperEnv(cmd *cobra.Command, v *viper.Viper, flag string) {
+	flagPtr := cmd.Flags().Lookup(flag)
+	envVarSuffix := strings.ToUpper(strings.ReplaceAll(flagPtr.Name, "-", "_"))
+	v.BindEnv(flagPtr.Name, fmt.Sprintf("%s_%s", envPrefix, envVarSuffix))
+	if !flagPtr.Changed && v.IsSet(flagPtr.Name) {
+		val := v.Get(flagPtr.Name)
+		cmd.Flags().Set(flagPtr.Name, fmt.Sprintf("%v", val))
+	}
 }
