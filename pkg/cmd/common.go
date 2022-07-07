@@ -71,9 +71,7 @@ func addQueryBackendOptionsFlags(cmd *cobra.Command, options *query.QueryBackend
 	v := viper.New()
 	v.SetEnvPrefix(envPrefix)
 	v.AutomaticEnv()
-	options.UseProxy = v.GetBool("KUBECTL_COST_USE_PROXY")
 	bindAFlagToViperEnv(cmd, v, "use-proxy")
-	fmt.Printf("%v", options.UseProxy)
 }
 
 // addKubeOptionsFlags sets up the cobra command with the flags from
