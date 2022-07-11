@@ -74,3 +74,6 @@ $binary pod \
   --window yesterday \
   --show-cpu \
   -n kube-system
+
+# use proxy
+$binary namespace --use-proxy
