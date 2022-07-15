@@ -242,14 +242,16 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 				QueryBackendOptions: qo,
 			})
 
-			allocations = allocs[0]
-
 			if err != nil && strings.Contains(err.Error(), "context canceled") {
 				// do nothing, because the context got canceled to favor a more
 				// recent window request from the user
 			} else if err != nil {
 				log.Errorf("failed to query agg cost model: %s", err)
+			} else if len(allocations) == 0 {
+				log.Errorf("Allocation response was empty. Not updating the table.")
 			} else {
+				allocations = allocs[0]
+
 				lastUpdated = time.Now()
 				app.QueueUpdateDraw(func() {
 					redrawTable()
