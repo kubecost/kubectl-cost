@@ -231,7 +231,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 			queryContext, queryCancel = context.WithCancel(context.Background())
 
 			// TODO: use flags for service name
-			allocs, err := query.QueryAllocation(query.AllocationParameters{
+			queriedAllocs, err := query.QueryAllocation(query.AllocationParameters{
 				RestConfig: ko.restConfig,
 				Ctx:        queryContext,
 				QueryParams: map[string]string{
@@ -247,10 +247,10 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 				// recent window request from the user
 			} else if err != nil {
 				log.Errorf("failed to query agg cost model: %s", err)
-			} else if len(allocations) == 0 {
+			} else if len(queriedAllocs) == 0 {
 				log.Errorf("Allocation response was empty. Not updating the table.")
 			} else {
-				allocations = allocs[0]
+				allocations = queriedAllocs[0]
 
 				lastUpdated = time.Now()
 				app.QueueUpdateDraw(func() {
