@@ -2,7 +2,7 @@
 
 `kubectl-cost` is a [kubectl plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/) that provides easy CLI access to Kubernetes cost allocation metrics via the [kubecost APIs](https://github.com/kubecost/docs/blob/master/apis.md). It allows developers, devops, and others to quickly determine the cost & efficiency for any Kubernetes workload.
 
-> If you use [OpenCost](https://github.com/kubecost/opencost), most of `kubectl cost` should work! You may have to fiddle with the service name, path, and port flags. Let us know how it goes, and open an issue if you encounter any problems!
+> If you use [OpenCost](https://github.com/kubecost/opencost), most of `kubectl cost` works! See [OpenCost documentation](https://www.opencost.io/docs/kubectl-cost) for examples. Let us know how it goes, and open an issue if you encounter any problems!
 
 <img src="assets/regular.gif" alt="Standard CLI Usage" width="600">
 
