@@ -45,13 +45,13 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-func writePredictionTable(out io.Writer, name string, currencyCode string, requestedCPU, requestedMemory string, prediction query.ResourceCostPredictionResponse, showCostPerResourceHr bool) {
-	t := makePredictionTable(name, currencyCode, requestedCPU, requestedMemory, prediction, showCostPerResourceHr)
+func writePredictionTable(out io.Writer, rowData []predictRowData, currencyCode string, showCostPerResourceHr bool) {
+	t := makePredictionTable(rowData, currencyCode, showCostPerResourceHr)
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func makePredictionTable(name string, currencyCode string, requestedCPU, requestedMemory string, prediction query.ResourceCostPredictionResponse, showCostPerResourceHr bool) table.Writer {
+func makePredictionTable(rowData []predictRowData, currencyCode string, showCostPerResourceHr bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{
@@ -133,23 +133,25 @@ func makePredictionTable(name string, currencyCode string, requestedCPU, request
 		},
 	})
 
-	row := table.Row{}
-	row = append(row, name)
-	row = append(row, requestedCPU)
-	row = append(row, requestedMemory)
+	for _, rowDatum := range rowData {
+		row := table.Row{}
+		row = append(row, fmt.Sprintf("%s/%s", rowDatum.workloadType, rowDatum.workloadName))
+		row = append(row, rowDatum.cpuStr)
+		row = append(row, rowDatum.memStr)
 
-	// row = append(row, prediction.MonthlyCoreHours)
-	// row = append(row, fmt.Sprintf("%.2f", prediction.MonthlyByteHours/1024/1024/1024))
+		// row = append(row, prediction.MonthlyCoreHours)
+		// row = append(row, fmt.Sprintf("%.2f", prediction.MonthlyByteHours/1024/1024/1024))
 
-	if showCostPerResourceHr {
-		row = append(row, fmt.Sprintf("%.4f %s", prediction.DerivedCostPerCoreHour, currencyCode))
-		row = append(row, fmt.Sprintf("%.4f %s", prediction.DerivedCostPerByteHour*1024*1024*1024, currencyCode))
+		if showCostPerResourceHr {
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerCoreHour, currencyCode))
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerByteHour*1024*1024*1024, currencyCode))
+		}
+
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostCPU, currencyCode))
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostMemory, currencyCode))
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostTotal, currencyCode))
+		t.AppendRow(row)
 	}
-
-	row = append(row, fmt.Sprintf("%.2f %s", prediction.MonthlyCostCPU, currencyCode))
-	row = append(row, fmt.Sprintf("%.2f %s", prediction.MonthlyCostMemory, currencyCode))
-	row = append(row, fmt.Sprintf("%.2f %s", prediction.MonthlyCostTotal, currencyCode))
-	t.AppendRow(row)
 	return t
 }
 
