@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -16,6 +17,8 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
+	"k8s.io/apimachinery/pkg/runtime"
+	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 
 	// yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
@@ -106,51 +109,114 @@ func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
 	}
 }
 
+type predictRowData struct {
+	workloadName string
+	workloadType string
+
+	memStr string
+	cpuStr string
+
+	prediction query.ResourceCostPredictionResponse
+}
+
 func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 	b, err := ioutil.ReadFile(no.filepath)
 	if err != nil {
 		return fmt.Errorf("failed to read file '%s': %s", no.filepath, err)
 	}
 
-	// https://github.com/kubernetes/client-go/issues/193#issuecomment-343138889
-	// https://github.com/kubernetes/client-go/issues/193#issuecomment-377140518
-	decode := scheme.Codecs.UniversalDeserializer().Decode
-	obj, _, err := decode(b, nil, nil)
-	if err != nil {
-		return fmt.Errorf("decoding from file: %s", err)
-	}
-
-	var totalResources v1.ResourceList
-	var name string
-	switch typed := obj.(type) {
-	case *appsv1.Deployment:
-		replicas := 1
-		if typed.Spec.Replicas == nil {
-			log.Warnf("replicas is nil, defaulting to 1")
-		} else {
-			replicas = int(*typed.Spec.Replicas)
+	// This looping decode lets us handle multiple definitions in a single file,
+	// as usually separated with '---'
+	//
+	// https://gist.github.com/pytimer/0ad436972a073bb37b8b6b8b474520fc
+	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(b), 100)
+	var rowData []predictRowData
+	for {
+		var rawObj runtime.RawExtension
+		if err = decoder.Decode(&rawObj); err != nil {
+			log.Debugf("Error decoding: %s", err)
+			break
 		}
-		name = typed.Name
-		totalResources = sumContainerResources(replicas, typed.Spec.Template.Spec)
-	case *appsv1.StatefulSet:
-		replicas := 1
-		if typed.Spec.Replicas == nil {
-			log.Warnf("replicas is nil, defaulting to 1")
-		} else {
-			replicas = int(*typed.Spec.Replicas)
-		}
-		name = typed.Name
-		totalResources = sumContainerResources(replicas, typed.Spec.Template.Spec)
-	case *v1.Pod:
-		name = typed.Name
-		totalResources = sumContainerResources(1, typed.Spec)
-	case *appsv1.DaemonSet:
-		name = typed.Name
-		return fmt.Errorf("DaemonSets are not supported because scheduling-dependent workloads are not yet supported")
-	default:
-		return fmt.Errorf("unsupported type: %T", obj)
-	}
 
+		// https://github.com/kubernetes/client-go/issues/193#issuecomment-343138889
+		// https://github.com/kubernetes/client-go/issues/193#issuecomment-377140518
+		obj, _, err := scheme.Codecs.UniversalDeserializer().Decode(rawObj.Raw, nil, nil)
+		if err != nil {
+			log.Warnf("decoding: %s", err)
+			break
+		}
+
+		var totalResources v1.ResourceList
+		var name string
+		var kind string
+		switch typed := obj.(type) {
+		case *appsv1.Deployment:
+			replicas := 1
+			if typed.Spec.Replicas == nil {
+				log.Warnf("replicas is nil, defaulting to 1")
+			} else {
+				replicas = int(*typed.Spec.Replicas)
+			}
+			name = typed.Name
+			kind = "Deployment"
+			totalResources = sumContainerResources(replicas, typed.Spec.Template.Spec)
+		case *appsv1.StatefulSet:
+			replicas := 1
+			if typed.Spec.Replicas == nil {
+				log.Warnf("replicas is nil, defaulting to 1")
+			} else {
+				replicas = int(*typed.Spec.Replicas)
+			}
+			name = typed.Name
+			kind = "StatefulSet"
+			totalResources = sumContainerResources(replicas, typed.Spec.Template.Spec)
+		case *v1.Pod:
+			name = typed.Name
+			kind = "Pod"
+			totalResources = sumContainerResources(1, typed.Spec)
+		case *appsv1.DaemonSet:
+			name = typed.Name
+			kind = "DaemonSet"
+			return fmt.Errorf("DaemonSets are not supported because scheduling-dependent workloads are not yet supported")
+		default:
+			return fmt.Errorf("unsupported type: %T", obj)
+		}
+
+		memStr := "0"
+		cpuStr := "0"
+		if mem, ok := totalResources[v1.ResourceMemory]; ok {
+			ptr := &mem
+			memStr = ptr.String()
+			log.Debugf("mem asapprox: %f", ptr.AsApproximateFloat64())
+		}
+		if cpu, ok := totalResources[v1.ResourceCPU]; ok {
+			ptr := &cpu
+			cpuStr = ptr.String()
+		}
+		log.Debugf("mem: '%s', cpu: '%s'", memStr, cpuStr)
+		prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
+			RestConfig:          ko.restConfig,
+			Ctx:                 context.Background(),
+			QueryBackendOptions: no.QueryBackendOptions,
+			QueryParams: map[string]string{
+				"window":          "2d", // TODO: flag
+				"clusterID":       no.clusterID,
+				"requestedMemory": memStr,
+				"requestedCPU":    cpuStr,
+			},
+		})
+		if err != nil {
+			return fmt.Errorf("prediction query failed: %s", err)
+		}
+
+		rowData = append(rowData, predictRowData{
+			workloadName: name,
+			workloadType: kind,
+			memStr:       memStr,
+			cpuStr:       cpuStr,
+			prediction:   prediction,
+		})
+	}
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
@@ -161,33 +227,6 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		currencyCode = ""
 	}
 
-	memStr := "0"
-	cpuStr := "0"
-	if mem, ok := totalResources[v1.ResourceMemory]; ok {
-		ptr := &mem
-		memStr = ptr.String()
-		log.Debugf("mem asapprox: %f", ptr.AsApproximateFloat64())
-	}
-	if cpu, ok := totalResources[v1.ResourceCPU]; ok {
-		ptr := &cpu
-		cpuStr = ptr.String()
-	}
-	log.Debugf("mem: '%s', cpu: '%s'", memStr, cpuStr)
-	prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
-		RestConfig:          ko.restConfig,
-		Ctx:                 context.Background(),
-		QueryBackendOptions: no.QueryBackendOptions,
-		QueryParams: map[string]string{
-			"window":          "2d", // TODO: flag
-			"clusterID":       no.clusterID,
-			"requestedMemory": memStr,
-			"requestedCPU":    cpuStr,
-		},
-	})
-	if err != nil {
-		return fmt.Errorf("prediction query failed: %s", err)
-	}
-
-	writePredictionTable(ko.Out, name, currencyCode, cpuStr, memStr, prediction, no.showCostPerResourceHr)
+	writePredictionTable(ko.Out, rowData, currencyCode, no.showCostPerResourceHr)
 	return nil
 }
