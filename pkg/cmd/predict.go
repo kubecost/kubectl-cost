@@ -1,10 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 
@@ -65,7 +67,7 @@ func newCmdPredict(
 			return runCostPredict(kubeO, predictO)
 		},
 	}
-	cmd.Flags().StringVarP(&predictO.filepath, "filepath", "f", "", "The file containing the workload definition whose cost should be predicted. E.g. a file might be 'test-deployment.yaml' containing an apps/v1 Deployment definition.")
+	cmd.Flags().StringVarP(&predictO.filepath, "filepath", "f", "", "The file containing the workload definition whose cost should be predicted. E.g. a file might be 'test-deployment.yaml' containing an apps/v1 Deployment definition. '-' can also be passed, in which case workload definitions will be read from stdin.")
 	cmd.Flags().StringVarP(&predictO.clusterID, "cluster-id", "c", "", "The cluster ID (in Kubecost) of the presumed cluster which the workload will be deployed to. This is used to determine resource costs. Defaults to all clusters.")
 	cmd.Flags().BoolVar(&predictO.showCostPerResourceHr, "show-cost-per-resource-hr", false, "Show the calculated cost per resource-hr (e.g. $/byte-hour) used for the cost prediction.")
 
@@ -76,8 +78,10 @@ func newCmdPredict(
 }
 
 func (predictO *PredictOptions) Validate() error {
-	if _, err := os.Stat(predictO.filepath); errors.Is(err, os.ErrNotExist) {
-		return fmt.Errorf("file '%s' does not exist, not a valid option", predictO.filepath)
+	if predictO.filepath != "-" {
+		if _, err := os.Stat(predictO.filepath); errors.Is(err, os.ErrNotExist) {
+			return fmt.Errorf("file '%s' does not exist, not a valid option", predictO.filepath)
+		}
 	}
 	return nil
 }
@@ -120,9 +124,26 @@ type predictRowData struct {
 }
 
 func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
-	b, err := ioutil.ReadFile(no.filepath)
-	if err != nil {
-		return fmt.Errorf("failed to read file '%s': %s", no.filepath, err)
+	var b []byte
+	var err error
+	if no.filepath == "-" {
+		reader := bufio.NewReader(ko.In)
+
+		scratch := make([]byte, 1024)
+		for {
+			n, err := reader.Read(scratch)
+			b = append(b, scratch[:n]...)
+			if err == io.EOF {
+				break
+			} else if err != nil {
+				return fmt.Errorf("reading from stdin: %s", err)
+			}
+		}
+	} else {
+		b, err = ioutil.ReadFile(no.filepath)
+		if err != nil {
+			return fmt.Errorf("failed to read file '%s': %s", no.filepath, err)
+		}
 	}
 
 	// This looping decode lets us handle multiple definitions in a single file,
