@@ -34,8 +34,12 @@ type QueryBackendOptions struct {
 	// The port at which the Service should be queried
 	ServicePort int
 
-	// The path at which can serve Allocation queries, e.g. "/model/allocation"
+	// A path which can serve Allocation queries, e.g. "/model/allocation"
 	AllocationPath string
+
+	// A path which can serve Resource Cost Prediction queries,
+	// e.g. "/prediction/resourcecost"
+	PredictResourceCostPath string
 
 	restConfig *rest.Config
 	pfQuerier  *PortForwardQuerier

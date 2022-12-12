@@ -28,10 +28,129 @@ const (
 	AssetTypeCol        = "Asset Type"
 	CPUCostCol          = "CPU Cost"
 	RAMCostCol          = "RAM Cost"
+
+	PredictColWorkload     = "Workload"
+	PredictColReqCPU       = "CPU"
+	PredictColReqMemory    = "Mem"
+	PredictColMoCoreHours  = "Mo. core-hrs"
+	PredictColMoGibHours   = "Mo. GiB-hrs"
+	PredictColCostCoreHr   = "Cost/core-hr"
+	PredictColCostGiBHr    = "Cost/GiB-hr"
+	PredictColMoCostCPU    = "CPU/mo"
+	PredictColMoCostMemory = "Mem/mo"
+	PredictColMoCostTotal  = "Total/mo"
 )
 
 func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
+}
+
+func writePredictionTable(out io.Writer, name string, currencyCode string, requestedCPU, requestedMemory string, prediction query.ResourceCostPredictionResponse, showCostPerResourceHr bool) {
+	t := makePredictionTable(name, currencyCode, requestedCPU, requestedMemory, prediction, showCostPerResourceHr)
+	t.SetOutputMirror(out)
+	t.Render()
+}
+
+func makePredictionTable(name string, currencyCode string, requestedCPU, requestedMemory string, prediction query.ResourceCostPredictionResponse, showCostPerResourceHr bool) table.Writer {
+	t := table.NewWriter()
+
+	columnConfigs := []table.ColumnConfig{
+		table.ColumnConfig{
+			Name: PredictColWorkload,
+		},
+		table.ColumnConfig{
+			Name: PredictColReqCPU,
+		},
+		table.ColumnConfig{
+			Name: PredictColReqMemory,
+		},
+	}
+	// table.ColumnConfig{
+	// 	Name: PredictColMoCoreHours,
+	// },
+	// table.ColumnConfig{
+	// 	Name: PredictColMoGibHours,
+	// },
+
+	if showCostPerResourceHr {
+		columnConfigs = append(columnConfigs, []table.ColumnConfig{
+			table.ColumnConfig{
+				Name: PredictColCostCoreHr,
+			},
+			table.ColumnConfig{
+				Name: PredictColCostGiBHr,
+			},
+		}...)
+	}
+
+	columnConfigs = append(columnConfigs, []table.ColumnConfig{
+		table.ColumnConfig{
+			Name:        PredictColMoCostCPU,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+		table.ColumnConfig{
+			Name:        PredictColMoCostMemory,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+		table.ColumnConfig{
+			Name:        PredictColMoCostTotal,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+	}...)
+	t.SetColumnConfigs(columnConfigs)
+
+	headerRow := table.Row{
+		PredictColWorkload,
+		PredictColReqCPU,
+		PredictColReqMemory,
+	}
+
+	// PredictColMoCoreHours,
+	// PredictColMoGibHours,
+	//
+	if showCostPerResourceHr {
+		headerRow = append(headerRow,
+			PredictColCostCoreHr,
+			PredictColCostGiBHr,
+		)
+	}
+
+	headerRow = append(headerRow,
+		PredictColMoCostCPU,
+		PredictColMoCostMemory,
+		PredictColMoCostTotal,
+	)
+
+	t.AppendHeader(headerRow)
+
+	t.SortBy([]table.SortBy{
+		{
+			Name: PredictColMoCostTotal,
+			Mode: table.DscNumeric,
+		},
+	})
+
+	row := table.Row{}
+	row = append(row, name)
+	row = append(row, requestedCPU)
+	row = append(row, requestedMemory)
+
+	// row = append(row, prediction.MonthlyCoreHours)
+	// row = append(row, fmt.Sprintf("%.2f", prediction.MonthlyByteHours/1024/1024/1024))
+
+	if showCostPerResourceHr {
+		row = append(row, fmt.Sprintf("%.4f %s", prediction.DerivedCostPerCoreHour, currencyCode))
+		row = append(row, fmt.Sprintf("%.4f %s", prediction.DerivedCostPerByteHour*1024*1024*1024, currencyCode))
+	}
+
+	row = append(row, fmt.Sprintf("%.2f %s", prediction.MonthlyCostCPU, currencyCode))
+	row = append(row, fmt.Sprintf("%.2f %s", prediction.MonthlyCostMemory, currencyCode))
+	row = append(row, fmt.Sprintf("%.2f %s", prediction.MonthlyCostTotal, currencyCode))
+	t.AppendRow(row)
+	return t
 }
 
 func writeAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {
