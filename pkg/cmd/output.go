@@ -133,6 +133,10 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		},
 	})
 
+	var summedMonthlyCPU float64
+	var summedMonthlyMem float64
+	var summedMonthlyTotal float64
+
 	for _, rowDatum := range rowData {
 		row := table.Row{}
 		row = append(row, fmt.Sprintf("%s/%s", rowDatum.workloadType, rowDatum.workloadName))
@@ -150,8 +154,30 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostCPU, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostMemory, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostTotal, currencyCode))
+
+		summedMonthlyCPU += rowDatum.prediction.MonthlyCostCPU
+		summedMonthlyMem += rowDatum.prediction.MonthlyCostMemory
+		summedMonthlyTotal += rowDatum.prediction.MonthlyCostTotal
+
 		t.AppendRow(row)
 	}
+
+	// A summary footer is redundant if there is only one row
+	if len(rowData) > 1 {
+		footerRow := table.Row{}
+		blankRows := 3
+		if showCostPerResourceHr {
+			blankRows += 2
+		}
+		for i := 0; i < blankRows; i++ {
+			footerRow = append(footerRow, "")
+		}
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyCPU, currencyCode))
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyMem, currencyCode))
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyTotal, currencyCode))
+		t.AppendFooter(footerRow)
+	}
+
 	return t
 }
 
