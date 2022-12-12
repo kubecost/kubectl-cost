@@ -110,7 +110,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 
 	// PredictColMoCoreHours,
 	// PredictColMoGibHours,
-	//
+
 	if showCostPerResourceHr {
 		headerRow = append(headerRow,
 			PredictColCostCoreHr,
