@@ -60,6 +60,7 @@ func newCmdPredict(
 				return err
 			}
 
+			predictO.Complete()
 			if err := predictO.Validate(); err != nil {
 				return err
 			}
@@ -85,7 +86,16 @@ func (predictO *PredictOptions) Validate() error {
 			return fmt.Errorf("file '%s' does not exist, not a valid option", predictO.filepath)
 		}
 	}
+
+	if err := predictO.QueryBackendOptions.Validate(); err != nil {
+		return fmt.Errorf("validating query options: %s", err)
+	}
+
 	return nil
+}
+
+func (predictO *PredictOptions) Complete() {
+	predictO.QueryBackendOptions.Complete()
 }
 
 func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
