@@ -210,7 +210,8 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		case *appsv1.DaemonSet:
 			name = typed.Name
 			kind = "DaemonSet"
-			return fmt.Errorf("DaemonSets are not supported because scheduling-dependent workloads are not yet supported")
+			log.Warnf("DaemonSets are not supported because scheduling-dependent workloads are not yet supported. Skipping %s/%s.", kind, name)
+			continue
 		default:
 			return fmt.Errorf("unsupported type: %T", obj)
 		}
