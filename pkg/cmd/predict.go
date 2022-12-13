@@ -74,6 +74,8 @@ func newCmdPredict(
 	addQueryBackendOptionsFlags(cmd, &predictO.QueryBackendOptions)
 	addKubeOptionsFlags(cmd, kubeO)
 
+	cmd.SilenceUsage = true
+
 	return cmd
 }
 
