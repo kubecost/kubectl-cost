@@ -1,5 +1,11 @@
 package query
 
+import (
+	"fmt"
+
+	"github.com/kubecost/opencost/pkg/log"
+)
+
 // QueryBackendOptions holds common options for managing the query backend used
 // by kubectl-cost, like service name, namespace, etc.
 type QueryBackendOptions struct {
@@ -7,19 +13,44 @@ type QueryBackendOptions struct {
 	// instead of port forwarding.
 	UseProxy bool
 
-	// The name of the cost-analyzer service in the cluster,
-	// in case user is running a non-standard name (like the
-	// staging helm chart). Combines with
-	// commonOptions.configFlags.Namespace to direct the API
-	// request.
+	// HelmReleaseName is used to template into service name/etc. to require
+	// less flags if Kubecost is installed in a non-"kubecost" namespace.
+	//
+	// Defaults to "kubecost".
+	HelmReleaseName string
+
+	// The name of the K8s service for Kubecost. By default, this is templated
+	// from HelmReleaseName.
 	ServiceName string
+
+	// The namespace in which Kubecost is running. By default, this is templated
+	// from HelmReleaseName.
+	KubecostNamespace string
 
 	// The port at which the Service should be queried
 	ServicePort int
 
-	// The namespace in which Kubecost is running
-	KubecostNamespace string
-
 	// The path at which can serve Allocation queries, e.g. "/model/allocation"
 	AllocationPath string
+}
+
+func (o *QueryBackendOptions) Complete() {
+	if o.ServiceName == "" {
+		o.ServiceName = fmt.Sprintf("%s-cost-analyzer", o.HelmReleaseName)
+		log.Debugf("ServiceName set to: %s", o.ServiceName)
+	}
+	if o.KubecostNamespace == "" {
+		o.KubecostNamespace = o.HelmReleaseName
+		log.Debugf("KubecostNamespace set to: %s", o.KubecostNamespace)
+	}
+}
+
+func (o *QueryBackendOptions) Validate() error {
+	if o.ServiceName == "" {
+		return fmt.Errorf("service name cannot be empty")
+	}
+	if o.KubecostNamespace == "" {
+		return fmt.Errorf("namespace for Kubecost cannot be empty")
+	}
+	return nil
 }
