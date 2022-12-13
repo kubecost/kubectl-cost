@@ -167,7 +167,10 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 	for {
 		var rawObj runtime.RawExtension
 		if err = decoder.Decode(&rawObj); err != nil {
-			log.Debugf("Error decoding: %s", err)
+			if errors.Is(err, io.EOF) {
+				break
+			}
+			return fmt.Errorf("decoding file data as K8s object: %s", err)
 			break
 		}
 
@@ -221,13 +224,11 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		if mem, ok := totalResources[v1.ResourceMemory]; ok {
 			ptr := &mem
 			memStr = ptr.String()
-			log.Debugf("mem asapprox: %f", ptr.AsApproximateFloat64())
 		}
 		if cpu, ok := totalResources[v1.ResourceCPU]; ok {
 			ptr := &cpu
 			cpuStr = ptr.String()
 		}
-		log.Debugf("mem: '%s', cpu: '%s'", memStr, cpuStr)
 		prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
 			RestConfig:          ko.restConfig,
 			Ctx:                 context.Background(),
