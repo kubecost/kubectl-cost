@@ -61,10 +61,12 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 }
 
 func addQueryBackendOptionsFlags(cmd *cobra.Command, options *query.QueryBackendOptions) {
-	cmd.Flags().StringVar(&options.ServiceName, "service-name", "kubecost-cost-analyzer", "The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart.")
+	cmd.Flags().StringVarP(&options.HelmReleaseName, "release-name", "r", "kubecost", "The name of the Helm release, used to template service names if they are unset. For example, if Kubecost is installed with 'helm install kubecost2 kubecost/cost-analyzer', then this should be set to 'kubecost2'.")
+	cmd.Flags().StringVarP(&options.KubecostNamespace, "kubecost-namespace", "N", "", "The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.")
+
 	cmd.Flags().IntVar(&options.ServicePort, "service-port", 9090, "The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003.")
+	cmd.Flags().StringVar(&options.ServiceName, "service-name", "", "The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.")
 	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
-	cmd.Flags().StringVarP(&options.KubecostNamespace, "kubecost-namespace", "N", "kubecost", "The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace.")
 	cmd.Flags().StringVar(&options.AllocationPath, "allocation-path", "/model/allocation", "URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute'")
 
 	//Check if environment variable KUBECTL_COST_USE_PROXY is set, it defaults to false
@@ -105,6 +107,7 @@ func (co *CostOptions) Complete() {
 		co.showLoadBalancerCost = true
 		co.showAssetType = true
 	}
+	co.QueryBackendOptions.Complete()
 }
 
 func (co *CostOptions) Validate() error {
@@ -112,6 +115,10 @@ func (co *CostOptions) Validate() error {
 	// for a nicer error message for the user
 	if _, err := kubecost.ParseWindowWithOffset(co.window, 0); err != nil {
 		return fmt.Errorf("failed to parse window: %s", err)
+	}
+
+	if err := co.QueryBackendOptions.Validate(); err != nil {
+		return fmt.Errorf("validating query options: %s", err)
 	}
 
 	return nil

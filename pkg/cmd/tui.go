@@ -38,6 +38,11 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
+			tuiO.QueryBackendOptions.Complete()
+			if err := tuiO.QueryBackendOptions.Validate(); err != nil {
+				return fmt.Errorf("validating query options: %s", err)
+			}
+
 			return runTUI(kubeO, tuiO.displayOptions, tuiO.QueryBackendOptions)
 		},
 	}
