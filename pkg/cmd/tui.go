@@ -38,7 +38,9 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			tuiO.QueryBackendOptions.Complete()
+			if err := tuiO.QueryBackendOptions.Complete(kubeO.restConfig); err != nil {
+				return fmt.Errorf("completing query options: %s", err)
+			}
 			if err := tuiO.QueryBackendOptions.Validate(); err != nil {
 				return fmt.Errorf("validating query options: %s", err)
 			}
@@ -186,7 +188,6 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 
 	// TODO: use flags for service name
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:          ko.restConfig,
 		Ctx:                 queryContext,
 		QueryBackendOptions: qo,
 	})
@@ -237,8 +238,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 
 			// TODO: use flags for service name
 			queriedAllocs, err := query.QueryAllocation(query.AllocationParameters{
-				RestConfig: ko.restConfig,
-				Ctx:        queryContext,
+				Ctx: queryContext,
 				QueryParams: map[string]string{
 					"window":     windowOptions[windowIndex],
 					"aggregate":  strings.Join(aggregation, ","),

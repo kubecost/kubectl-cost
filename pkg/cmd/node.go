@@ -34,7 +34,9 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			assetsO.CostOptions.Complete()
+			if err := assetsO.CostOptions.Complete(kubeO.restConfig); err != nil {
+				return fmt.Errorf("completing options: %s", err)
+			}
 
 			if err := assetsO.CostOptions.Validate(); err != nil {
 				return err
@@ -51,9 +53,7 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 }
 
 func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
-
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
@@ -63,7 +63,6 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 	}
 
 	assets, err := query.QueryAssets(query.AssetParameters{
-		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
 		Window:              no.window,
 		Accumulate:          "true",

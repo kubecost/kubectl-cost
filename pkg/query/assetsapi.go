@@ -7,7 +7,6 @@ import (
 
 	"github.com/kubecost/opencost/pkg/kubecost"
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type assetResponse struct {
@@ -16,8 +15,7 @@ type assetResponse struct {
 }
 
 type AssetParameters struct {
-	RestConfig *rest.Config
-	Ctx        context.Context
+	Ctx context.Context
 
 	Window             string
 	Aggregate          string
@@ -50,7 +48,7 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 	var bytes []byte
 	var err error
 	if p.UseProxy {
-		clientset, err := kubernetes.NewForConfig(p.RestConfig)
+		clientset, err := kubernetes.NewForConfig(p.restConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create clientset: %s", err)
 		}
@@ -60,7 +58,7 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/assets", p.ServicePort, requestParams, p.Ctx)
+		bytes, err = p.QueryBackendOptions.pfQuerier.queryGet(p.Ctx, "model/assets", requestParams)
 		if err != nil {
 			return nil, fmt.Errorf("failed to port forward query: %s", err)
 		}

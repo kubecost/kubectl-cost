@@ -37,8 +37,9 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			labelO.CostOptions.Complete()
-
+			if err := labelO.CostOptions.Complete(kubeO.restConfig); err != nil {
+				return fmt.Errorf("completing options: %s", err)
+			}
 			if err := labelO.CostOptions.Validate(); err != nil {
 				return err
 			}
@@ -65,7 +66,6 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 	aggregation := []string{"cluster", fmt.Sprintf("label:%s", no.queryLabel)}
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
@@ -75,8 +75,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 	}
 
 	allocations, err := query.QueryAllocation(query.AllocationParameters{
-		RestConfig: ko.restConfig,
-		Ctx:        context.Background(),
+		Ctx: context.Background(),
 		QueryParams: map[string]string{
 			"window":     no.window,
 			"aggregate":  strings.Join(aggregation, ","),

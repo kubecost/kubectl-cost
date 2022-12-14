@@ -29,8 +29,9 @@ func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStream
 				return err
 			}
 
-			costO.Complete()
-
+			if err := costO.Complete(kubeO.restConfig); err != nil {
+				return fmt.Errorf("completing options: %s", err)
+			}
 			if err := costO.Validate(); err != nil {
 				return err
 			}
@@ -53,7 +54,6 @@ func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStream
 func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation []string) error {
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
 		QueryBackendOptions: co.QueryBackendOptions,
 	})
@@ -63,8 +63,7 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 	}
 
 	allocations, err := query.QueryAllocation(query.AllocationParameters{
-		RestConfig: ko.restConfig,
-		Ctx:        context.Background(),
+		Ctx: context.Background(),
 		QueryParams: map[string]string{
 			"window":           co.window,
 			"aggregate":        strings.Join(aggregation, ","),
