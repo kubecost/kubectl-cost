@@ -22,6 +22,7 @@ var (
     # based on the last 5 days of activity.
     %[1]s cost namespace --window 5d
 
+    # Predict the cost of the Deployment defined in k8s-deployment.yaml.
     %[1]s cost predict -f 'k8s-deployment.yaml' \
       --show-cost-per-resource-hr
 

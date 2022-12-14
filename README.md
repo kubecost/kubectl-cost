@@ -90,6 +90,13 @@ kubectl cost namespace \
   --show-efficiency=false
 ```
 
+
+Predict the cost of the Deployment defined in k8s-deployment.yaml.
+``` sh
+kubectl cost predict -f 'k8s-deployment.yaml' \
+  --show-cost-per-resource-hr
+```
+
 Show the projected monthly rate for each controller
 based on the last 5 days of activity with PV (persistent
 volume) cost breakdown.
