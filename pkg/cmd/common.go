@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"k8s.io/client-go/rest"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/kubecost/opencost/pkg/kubecost"
@@ -97,7 +98,7 @@ func addKubeOptionsFlags(cmd *cobra.Command, ko *KubeOptions) {
 	// ko.configFlags.Namespace = &emptyStr
 }
 
-func (co *CostOptions) Complete() {
+func (co *CostOptions) Complete(restConfig *rest.Config) error {
 	if co.showAll {
 		co.showCPUCost = true
 		co.showMemoryCost = true
@@ -108,7 +109,10 @@ func (co *CostOptions) Complete() {
 		co.showLoadBalancerCost = true
 		co.showAssetType = true
 	}
-	co.QueryBackendOptions.Complete()
+	if err := co.QueryBackendOptions.Complete(restConfig); err != nil {
+		return fmt.Errorf("complete backend opts: %s", err)
+	}
+	return nil
 }
 
 func (co *CostOptions) Validate() error {

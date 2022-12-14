@@ -256,13 +256,23 @@ Kubecost/OpenCost APIs:
 
 ## Implementation Quirks
 
-In order to provide a seamless experience for standard Kubernetes configurations, `kubectl-cost` temporarily forwards a port on your system to a Kubecost pod and uses that port to proxy a request. The port will only be bound to `localhost` and will only be open for the duration of the API request.
+In order to provide a seamless experience for standard Kubernetes
+configurations, `kubectl-cost` temporarily forwards a port on your system to a
+Kubecost pod and uses that port to proxy requests. The port will only be bound
+to `localhost` and will only be open for the duration of the `kubectl cost` run.
+Due to Linux default conventions, the port may appear as held for a little while
+after the run (see TCP's `TIME_WAIT`).
 
-If you don't want a port to be temporarily forwarded, there is legacy behavior exposed with the flag `--use-proxy` or using environment `KUBECTL_COST_USE_PROXY` that will instead use the Kubernetes API server to proxy a request to Kubecost. This behavior has its own pitfalls, especially with security policies that would prevent the API server from communicating with services. If you'd like to test this behavior, to make sure it will work with your cluster:
+If you don't want a port to be temporarily forwarded, there is legacy behavior
+exposed with the flag `--use-proxy` or using environment
+`KUBECTL_COST_USE_PROXY` that will instead use the Kubernetes API server to
+proxy requests to Kubecost. This behavior has its own pitfalls, especially with
+security policies that would prevent the API server from communicating with
+services. If you'd like to test this behavior, to make sure it will work with
+your cluster:
 
 ``` sh
 kubectl proxy --port 8080
-
 ```
 
 ``` sh
