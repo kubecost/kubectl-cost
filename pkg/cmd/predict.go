@@ -31,8 +31,6 @@ import (
 type PredictOptions struct {
 	window string
 
-	// TODO: idle/no idle
-
 	clusterID string
 
 	// The file containing the workload definition to be predicted.
