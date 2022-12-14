@@ -168,32 +168,25 @@ Which yields an output with this format:
 ```
 
 #### Flags
-See `kubectl cost [subcommand] --help` for the full set of flags.
+See `kubectl cost [subcommand] --help` for the full set of flags. Each
+subcommand has its own set of flags for adjusting query behavior and output.
 
-The following flags modify the behavior of the subcommands:
+There are several flags that modify the behavior of queries to the backing
+Kubecost/OpenCost APIs:
 ```
-    --historical                  show the total cost during the window instead of the projected monthly rate based on the data in the window"
-    --show-asset-type             show type of assets displayed.
-    --show-cpu                    show data for CPU cost
-    --show-efficiency             show efficiency of cost alongside cost where available (default true)
-    --show-gpu                    show data for GPU cost
-    --show-lb                     show load balancer cost data
-    --show-memory                 show data for memory cost
-    --show-network                show data for network cost
-    --show-pv                     show data for PV (physical volume) cost
-    --show-shared                 show shared cost data
--A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.
-    --window string               The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here. (default "1d")
--n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
-    --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
+    -r, --release-name string                 The name of the Helm release, used to template service names if they are unset. For example, if Kubecost is installed with 'helm install kubecost2 kubecost/cost-analyzer', then this should be set to 'kubecost2'. (default "kubecost")
+    --service-name string                 The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.
     --service-port int               The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003. (default 9090)
-    --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
--N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
+    -N, --kubecost-namespace string           The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.
+
     --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
+
+    --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
+    --predict-resource-cost-path string   URL path at which Resource Cost Prediction queries can be served from the configured service. (default "/model/prediction/resourcecost")
 ```
 
 
-`kubectl cost` has to interact with the Kubernetes API server. It tries to use your kubeconfig. These flags are common to `kubectl` and allow you to customize this behavior.
+`kubectl cost` has to interact with the Kubernetes API server. It tries to use your existing kubeconfig. These flags are common to `kubectl` and allow you to customize this behavior:
 ``` sh
       --as string                      Username to impersonate for the operation
       --as-group stringArray           Group to impersonate for the operation, this flag can be repeated to specify multiple groups.
