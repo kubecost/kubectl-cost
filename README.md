@@ -62,7 +62,7 @@ with all cost components displayed.
 ``` sh
 kubectl cost namespace --show-all-resources
 ```
-Here is sample output:
+Example output:
 ```
 +-------------------+-----------+----------+----------+-------------+----------+----------+----------+-------------+--------------------+
 | NAMESPACE         | CPU       | CPU EFF. | MEMORY   | MEMORY EFF. | GPU      | PV       | NETWORK  | SHARED COST | MONTHLY RATE (ALL) |
@@ -79,6 +79,44 @@ Here is sample output:
 +-------------------+-----------+----------+----------+-------------+----------+----------+----------+-------------+--------------------+
 ```
 
+Predict the cost of a YAML spec based on its requests:
+``` sh
+read -r -d '' DEF << EndOfMessage
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        resources:
+          requests:
+            cpu: "3"
+            memory: "2Gi"
+EndOfMessage
+echo "$DEF" | go run cmd/kubectl-cost/kubectl-cost.go predict -f -
+```
+Example output:
+```
++-----------------------------+-----+-----+------------+-----------+------------+
+| WORKLOAD                    | CPU | MEM | CPU/MO     | MEM/MO    | TOTAL/MO   |
++-----------------------------+-----+-----+------------+-----------+------------+
+| Deployment/nginx-deployment | 9   | 6Gi | 209.51 USD | 18.73 USD | 228.24 USD |
++-----------------------------+-----+-----+------------+-----------+------------+
+```
+
 Show how much each namespace cost over the past 5 days
 with additional CPU and memory cost and without efficiency.
 ``` sh
@@ -89,7 +127,6 @@ kubectl cost namespace \
   --show-memory \
   --show-efficiency=false
 ```
-
 
 Predict the cost of the Deployment defined in k8s-deployment.yaml.
 ``` sh
