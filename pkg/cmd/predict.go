@@ -29,7 +29,7 @@ import (
 
 // PredictOptions contains options specific to prediction queries.
 type PredictOptions struct {
-	// TODO: window
+	window string
 
 	// TODO: idle/no idle
 
@@ -71,6 +71,7 @@ func newCmdPredict(
 	cmd.Flags().StringVarP(&predictO.filepath, "filepath", "f", "", "The file containing the workload definition whose cost should be predicted. E.g. a file might be 'test-deployment.yaml' containing an apps/v1 Deployment definition. '-' can also be passed, in which case workload definitions will be read from stdin.")
 	cmd.Flags().StringVarP(&predictO.clusterID, "cluster-id", "c", "", "The cluster ID (in Kubecost) of the presumed cluster which the workload will be deployed to. This is used to determine resource costs. Defaults to all clusters.")
 	cmd.Flags().BoolVar(&predictO.showCostPerResourceHr, "show-cost-per-resource-hr", false, "Show the calculated cost per resource-hr (e.g. $/byte-hour) used for the cost prediction.")
+	cmd.Flags().StringVar(&predictO.window, "window", "2d", "The window of cost data to base resource costs on. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 
 	addQueryBackendOptionsFlags(cmd, &predictO.QueryBackendOptions)
 	addKubeOptionsFlags(cmd, kubeO)
@@ -234,7 +235,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			Ctx:                 context.Background(),
 			QueryBackendOptions: no.QueryBackendOptions,
 			QueryParams: map[string]string{
-				"window":          "2d", // TODO: flag
+				"window":          no.window,
 				"clusterID":       no.clusterID,
 				"requestedMemory": memStr,
 				"requestedCPU":    cpuStr,
