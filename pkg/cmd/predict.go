@@ -162,7 +162,8 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 	//
 	// https://gist.github.com/pytimer/0ad436972a073bb37b8b6b8b474520fc
 	decoder := yamlutil.NewYAMLOrJSONDecoder(bytes.NewReader(b), 100)
-	var rowData []predictRowData
+
+	var objs []runtime.Object
 	for {
 		var rawObj runtime.RawExtension
 		if err = decoder.Decode(&rawObj); err != nil {
@@ -170,7 +171,6 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 				break
 			}
 			return fmt.Errorf("decoding file data as K8s object: %s", err)
-			break
 		}
 
 		// https://github.com/kubernetes/client-go/issues/193#issuecomment-343138889
@@ -181,6 +181,25 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			break
 		}
 
+		// Flatten lists
+		if l, ok := obj.(*v1.List); ok {
+			for _, rawObj := range l.Items {
+				obj, _, err := scheme.Codecs.UniversalDeserializer().Decode(rawObj.Raw, nil, nil)
+				if err != nil {
+					log.Warnf("decoding inside list: %s", err)
+					continue
+				}
+
+				// don't handle nested lists for now
+				objs = append(objs, obj)
+			}
+			continue
+		}
+		objs = append(objs, obj)
+	}
+
+	var rowData []predictRowData
+	for _, obj := range objs {
 		var totalResources v1.ResourceList
 		var name string
 		var kind string
