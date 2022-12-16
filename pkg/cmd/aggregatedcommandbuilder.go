@@ -69,6 +69,7 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 			"aggregate":        strings.Join(aggregation, ","),
 			"accumulate":       "true",
 			"filterNamespaces": co.filterNamespace,
+			"idle":             fmt.Sprintf("%t", !co.hideIdle),
 		},
 		QueryBackendOptions: co.QueryBackendOptions,
 	})

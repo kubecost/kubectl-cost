@@ -20,6 +20,7 @@ type CostOptions struct {
 
 	isHistorical bool
 	showAll      bool
+	hideIdle     bool
 
 	displayOptions
 	query.QueryBackendOptions
@@ -56,6 +57,7 @@ func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().BoolVar(&options.showLoadBalancerCost, "show-lb", false, "show load balancer cost data")
 	cmd.Flags().BoolVar(&options.showEfficiency, "show-efficiency", true, "show efficiency of cost alongside CPU and memory cost")
 	cmd.Flags().BoolVar(&options.showAssetType, "show-asset-type", false, "show type of assets displayed.")
+	cmd.Flags().BoolVar(&options.hideIdle, "hide-idle", false, "ignore __idle__ allocation data")
 	cmd.Flags().BoolVarP(&options.showAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.")
 
 	addQueryBackendOptionsFlags(cmd, &options.QueryBackendOptions)
