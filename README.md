@@ -106,7 +106,7 @@ spec:
             cpu: "3"
             memory: "2Gi"
 EndOfMessage
-echo "$DEF" | go run cmd/kubectl-cost/kubectl-cost.go predict -f -
+echo "$DEF" | kubectl cost predict -f -
 ```
 Example output:
 ```
