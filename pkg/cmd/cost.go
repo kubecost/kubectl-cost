@@ -9,7 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"github.com/kubecost/opencost/pkg/log"
+	"github.com/opencost/opencost/pkg/log"
 )
 
 // Note that the auth/gcp import is necessary https://github.com/kubernetes/client-go/issues/242
