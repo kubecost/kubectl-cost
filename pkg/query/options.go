@@ -3,7 +3,7 @@ package query
 import (
 	"fmt"
 
-	"github.com/kubecost/opencost/pkg/log"
+	"github.com/opencost/opencost/pkg/log"
 )
 
 // QueryBackendOptions holds common options for managing the query backend used

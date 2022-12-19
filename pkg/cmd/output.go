@@ -9,7 +9,7 @@ import (
 	"github.com/jedib0t/go-pretty/v6/text"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
-	"github.com/kubecost/opencost/pkg/kubecost"
+	"github.com/opencost/opencost/pkg/kubecost"
 )
 
 const (
