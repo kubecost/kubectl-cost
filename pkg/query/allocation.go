@@ -6,14 +6,12 @@ import (
 	"fmt"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 
 	"github.com/kubecost/opencost/pkg/kubecost"
 )
 
 type AllocationParameters struct {
-	RestConfig *rest.Config
-	Ctx        context.Context
+	Ctx context.Context
 
 	QueryParams map[string]string
 
@@ -33,7 +31,7 @@ func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, 
 	var err error
 
 	if p.UseProxy {
-		clientset, err := kubernetes.NewForConfig(p.RestConfig)
+		clientset, err := kubernetes.NewForConfig(p.restConfig)
 		if err != nil {
 			return nil, fmt.Errorf("failed to create clientset for proxied query: %s", err)
 		}
@@ -43,7 +41,7 @@ func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, 
 			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, p.AllocationPath, p.ServicePort, p.QueryParams, p.Ctx)
+		bytes, err = p.QueryBackendOptions.pfQuerier.queryGet(p.Ctx, p.AllocationPath, p.QueryParams)
 		if err != nil {
 			return nil, fmt.Errorf("failed to port forward query: %s", err)
 		}
