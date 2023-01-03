@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
-	"github.com/kubecost/opencost/pkg/log"
+	"github.com/opencost/opencost/pkg/log"
 )
 
 // CostOptionsLabel contains the standard CostOptions and any

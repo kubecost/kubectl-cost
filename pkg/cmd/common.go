@@ -9,7 +9,7 @@ import (
 	"k8s.io/client-go/rest"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
-	"github.com/kubecost/opencost/pkg/kubecost"
+	"github.com/opencost/opencost/pkg/kubecost"
 )
 
 // CostOptions holds common options for querying and displaying
