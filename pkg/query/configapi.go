@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"k8s.io/client-go/kubernetes"
-	"k8s.io/client-go/rest"
 )
 
 type configsResponse struct {
@@ -16,8 +15,7 @@ type configsResponse struct {
 }
 
 type CurrencyCodeParameters struct {
-	RestConfig *rest.Config
-	Ctx        context.Context
+	Ctx context.Context
 
 	QueryBackendOptions
 }
@@ -27,7 +25,7 @@ func QueryCurrencyCode(p CurrencyCodeParameters) (string, error) {
 	var err error
 
 	if p.UseProxy {
-		clientset, err := kubernetes.NewForConfig(p.RestConfig)
+		clientset, err := kubernetes.NewForConfig(p.restConfig)
 		if err != nil {
 			return "", fmt.Errorf("failed to create clientset: %s", err)
 		}
@@ -38,7 +36,7 @@ func QueryCurrencyCode(p CurrencyCodeParameters) (string, error) {
 			return "", fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, "model/getConfigs", p.ServicePort, nil, p.Ctx)
+		bytes, err = p.QueryBackendOptions.pfQuerier.queryGet(p.Ctx, "model/getConfigs", nil)
 		if err != nil {
 			return "", fmt.Errorf("failed to forward get kubecost: %s", err)
 		}

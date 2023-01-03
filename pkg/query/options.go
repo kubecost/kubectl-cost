@@ -1,9 +1,13 @@
 package query
 
 import (
+	"context"
 	"fmt"
+	"time"
 
 	"github.com/opencost/opencost/pkg/log"
+
+	"k8s.io/client-go/rest"
 )
 
 // QueryBackendOptions holds common options for managing the query backend used
@@ -32,9 +36,12 @@ type QueryBackendOptions struct {
 
 	// The path at which can serve Allocation queries, e.g. "/model/allocation"
 	AllocationPath string
+
+	restConfig *rest.Config
+	pfQuerier  *PortForwardQuerier
 }
 
-func (o *QueryBackendOptions) Complete() {
+func (o *QueryBackendOptions) Complete(restConfig *rest.Config) error {
 	if o.ServiceName == "" {
 		o.ServiceName = fmt.Sprintf("%s-cost-analyzer", o.HelmReleaseName)
 		log.Debugf("ServiceName set to: %s", o.ServiceName)
@@ -43,6 +50,17 @@ func (o *QueryBackendOptions) Complete() {
 		o.KubecostNamespace = o.HelmReleaseName
 		log.Debugf("KubecostNamespace set to: %s", o.KubecostNamespace)
 	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Minute)
+	defer cancel()
+	if !o.UseProxy {
+		pfQ, err := CreatePortForwardForService(restConfig, o.KubecostNamespace, o.ServiceName, o.ServicePort, ctx)
+		if err != nil {
+			return fmt.Errorf("port-forwarding requested service '%s' (port %d) in namespace '%s': %s", o.ServiceName, o.ServicePort, o.KubecostNamespace, err)
+		}
+		o.pfQuerier = pfQ
+	}
+	return nil
 }
 
 func (o *QueryBackendOptions) Validate() error {

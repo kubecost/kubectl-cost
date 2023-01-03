@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
@@ -20,35 +21,12 @@ import (
 	"github.com/opencost/opencost/pkg/log"
 )
 
-// reference: https://stackoverflow.com/questions/41545123/how-to-get-pods-under-the-service-with-client-go-the-client-library-of-kubernete
-func getServicePods(restConfig *rest.Config, namespace, serviceName string, ctx context.Context) (*corev1.PodList, error) {
-	clientset, err := kubernetes.NewForConfig(restConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to make clientset: %s", err)
-	}
-
-	svc, err := clientset.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get service %s in namespace %s: %s", serviceName, namespace, err)
-	}
-
-	labelSet := labels.Set(svc.Spec.Selector)
-	labelSelector := labelSet.AsSelector().String()
-
-	pods, err := clientset.CoreV1().
-		Pods(namespace).
-		List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
-	if err != nil {
-		return nil, fmt.Errorf("failed to get pods in namespace %s for label selector %s: %s", namespace, labelSelector, err)
-	}
-
-	return pods, nil
+type PortForwardQuerier struct {
+	baseQueryURL string
+	stopCh       chan struct{}
 }
 
-// portForwardedQueryService finds the pods associated with the given namespace and service,
-// port forwards to them, and executes a GET request to the endpoint with the specified params.
-// It then stops the port forward.
-func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, endpoint string, servicePort int, params map[string]string, ctx context.Context) ([]byte, error) {
+func CreatePortForwardForService(restConfig *rest.Config, namespace, serviceName string, servicePort int, ctx context.Context) (*PortForwardQuerier, error) {
 	// First: find a pod to port forward to
 	pods, err := getServicePods(restConfig, namespace, serviceName, ctx)
 	if err != nil {
@@ -124,15 +102,12 @@ func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, 
 		}
 	}()
 
-	// Cleanup once we're done
-	defer close(stopCh)
-
 	// Fourth: wait until the port forward is ready, or we hit a timeout.
 	select {
 	case <-readyCh:
 		break
-	case <-time.After(1 * time.Minute):
-		return nil, fmt.Errorf("timed out (1 min) trying to port forward")
+	case <-time.After(15 * time.Second):
+		return nil, fmt.Errorf("timed out (15 sec) trying to port forward")
 	}
 
 	// Confirm that we've port forwarded and allows us to discover the local forwarded port.
@@ -145,12 +120,37 @@ func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, 
 		return nil, fmt.Errorf("unexpected error: no ports forwarded")
 	}
 
-	// Fifth: make the request to the forwarded port
-	// TODO: url path join properly
+	baseQueryURL := fmt.Sprintf("http://localhost:%d", ports[0].Local)
+	log.Debugf("Port-forward set up at: %s", baseQueryURL)
+
+	return &PortForwardQuerier{
+		baseQueryURL: baseQueryURL,
+		stopCh:       stopCh,
+	}, nil
+}
+
+// Stop ends the port forward session.
+func (pfq *PortForwardQuerier) Stop() {
+	pfq.baseQueryURL = ""
+	close(pfq.stopCh)
+}
+
+// queryGet relies on a live port-forward session to execute a GET request
+// against a forwarded service at the given path with the given params.
+func (pfq *PortForwardQuerier) queryGet(ctx context.Context, path string, params map[string]string) ([]byte, error) {
+	if pfq.baseQueryURL == "" {
+		return nil, fmt.Errorf("base port-forward URL must be non-empty")
+	}
+
+	fullPath, err := url.JoinPath(pfq.baseQueryURL, path)
+	if err != nil {
+		return nil, fmt.Errorf("joining paths (%s, %s): %s", pfq.baseQueryURL, path, err)
+	}
+
 	req, err := http.NewRequestWithContext(
 		ctx,
 		"GET",
-		fmt.Sprintf("http://localhost:%d/%s", ports[0].Local, endpoint),
+		fullPath,
 		nil,
 	)
 	if err != nil {
@@ -165,16 +165,41 @@ func portForwardedQueryService(restConfig *rest.Config, namespace, serviceName, 
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to GET %s: %s", endpoint, err)
+		return nil, fmt.Errorf("failed to GET %s: %s", fullPath, err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed to read %s response body: %s", endpoint, err)
+		return nil, fmt.Errorf("failed to read %s response body: %s", fullPath, err)
 	}
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("received non-200 status code %d and data: %s", resp.StatusCode, body)
 	}
 
 	return body, nil
+}
+
+// reference: https://stackoverflow.com/questions/41545123/how-to-get-pods-under-the-service-with-client-go-the-client-library-of-kubernete
+func getServicePods(restConfig *rest.Config, namespace, serviceName string, ctx context.Context) (*corev1.PodList, error) {
+	clientset, err := kubernetes.NewForConfig(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to make clientset: %s", err)
+	}
+
+	svc, err := clientset.CoreV1().Services(namespace).Get(ctx, serviceName, metav1.GetOptions{})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get service %s in namespace %s: %s", serviceName, namespace, err)
+	}
+
+	labelSet := labels.Set(svc.Spec.Selector)
+	labelSelector := labelSet.AsSelector().String()
+
+	pods, err := clientset.CoreV1().
+		Pods(namespace).
+		List(ctx, metav1.ListOptions{LabelSelector: labelSelector})
+	if err != nil {
+		return nil, fmt.Errorf("failed to get pods in namespace %s for label selector %s: %s", namespace, labelSelector, err)
+	}
+
+	return pods, nil
 }
