@@ -12,7 +12,7 @@ import (
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
 
-	"github.com/kubecost/opencost/pkg/log"
+	"github.com/opencost/opencost/pkg/log"
 
 	"github.com/spf13/cobra"
 	appsv1 "k8s.io/api/apps/v1"
