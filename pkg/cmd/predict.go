@@ -21,8 +21,8 @@ import (
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/runtime"
 	yamlutil "k8s.io/apimachinery/pkg/util/yaml"
+	"k8s.io/client-go/rest"
 
-	// yamlutil "k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	"k8s.io/client-go/kubernetes/scheme"
 )
@@ -52,15 +52,17 @@ func newCmdPredict(
 		Short: "Estimate the monthly cost of a workload based on tracked cluster resource costs.",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
-				return err
+				return fmt.Errorf("complete k8s options: %s", err)
 			}
 			if err := kubeO.Validate(); err != nil {
-				return err
+				return fmt.Errorf("validate k8s options: %s", err)
 			}
 
-			predictO.Complete()
+			if err := predictO.Complete(kubeO.restConfig); err != nil {
+				return fmt.Errorf("complete: %s", err)
+			}
 			if err := predictO.Validate(); err != nil {
-				return err
+				return fmt.Errorf("validate: %s", err)
 			}
 
 			return runCostPredict(kubeO, predictO)
@@ -93,8 +95,11 @@ func (predictO *PredictOptions) Validate() error {
 	return nil
 }
 
-func (predictO *PredictOptions) Complete() {
-	predictO.QueryBackendOptions.Complete()
+func (predictO *PredictOptions) Complete(restConfig *rest.Config) error {
+	if err := predictO.QueryBackendOptions.Complete(restConfig); err != nil {
+		return fmt.Errorf("complete backend opts: %s", err)
+	}
+	return nil
 }
 
 func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
@@ -271,7 +276,6 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		})
 	}
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
-		RestConfig:          ko.restConfig,
 		Ctx:                 context.Background(),
 		QueryBackendOptions: no.QueryBackendOptions,
 	})

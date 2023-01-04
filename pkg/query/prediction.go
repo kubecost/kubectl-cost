@@ -48,7 +48,7 @@ func QueryPredictResourceCost(p ResourcePredictParameters) (ResourceCostPredicti
 			return ResourceCostPredictionResponse{}, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
 		}
 	} else {
-		bytes, err = portForwardedQueryService(p.RestConfig, p.KubecostNamespace, p.ServiceName, p.PredictResourceCostPath, p.ServicePort, p.QueryParams, p.Ctx)
+		bytes, err = p.QueryBackendOptions.pfQuerier.queryGet(p.Ctx, p.PredictResourceCostPath, p.QueryParams)
 		if err != nil {
 			return ResourceCostPredictionResponse{}, fmt.Errorf("failed to port forward query: %s", err)
 		}
