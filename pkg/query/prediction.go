@@ -21,14 +21,17 @@ type ResourcePredictParameters struct {
 }
 
 type ResourceCostPredictionResponse struct {
-	DerivedCostPerCoreHour float64 `json:"derivedCostPerCoreHour"`
-	DerivedCostPerByteHour float64 `json:"derivedCostPerByteHour"`
+	DerivedCostPerCPUCoreHour    float64 `json:"derivedCostPerCPUCoreHour"`
+	DerivedCostPerMemoryByteHour float64 `json:"derivedCostPerMemoryByteHour"`
+	DerivedCostPerGPUHour        float64 `json:"derivedCostPerGPUHour"`
 
-	MonthlyCoreHours float64 `json:"monthlyCoreHours"`
-	MonthlyByteHours float64 `json:"monthlyByteHours"`
+	MonthlyCPUCoreHours    float64 `json:"monthlyCPUCoreHours"`
+	MonthlyMemoryByteHours float64 `json:"monthlyMemoryByteHours"`
+	MonthlyGPUHours        float64 `json:"monthlyGPUHours"`
 
 	MonthlyCostMemory float64 `json:"monthlyCostMemory"`
 	MonthlyCostCPU    float64 `json:"monthlyCostCPU"`
+	MonthlyCostGPU    float64 `json:"monthlyCostGPU"`
 	MonthlyCostTotal  float64 `json:"monthlyCostTotal"`
 }
 
