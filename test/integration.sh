@@ -22,6 +22,10 @@ binary=$1
 # based on the last 5 days of activity.
 $binary namespace --window 5d
 
+# https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
+SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
+$binary predict -f "${SCRIPT_DIR}/multi.yaml"
+
 # Show how much each namespace cost over the past 5 days
 # with additional CPU and memory cost and without efficiency.
 $binary namespace \

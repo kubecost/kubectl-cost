@@ -28,10 +28,145 @@ const (
 	AssetTypeCol        = "Asset Type"
 	CPUCostCol          = "CPU Cost"
 	RAMCostCol          = "RAM Cost"
+
+	PredictColWorkload     = "Workload"
+	PredictColReqCPU       = "CPU"
+	PredictColReqMemory    = "Mem"
+	PredictColMoCoreHours  = "Mo. core-hrs"
+	PredictColMoGibHours   = "Mo. GiB-hrs"
+	PredictColCostCoreHr   = "Cost/core-hr"
+	PredictColCostGiBHr    = "Cost/GiB-hr"
+	PredictColMoCostCPU    = "CPU/mo"
+	PredictColMoCostMemory = "Mem/mo"
+	PredictColMoCostTotal  = "Total/mo"
 )
 
 func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
+}
+
+func writePredictionTable(out io.Writer, rowData []predictRowData, currencyCode string, showCostPerResourceHr bool) {
+	t := makePredictionTable(rowData, currencyCode, showCostPerResourceHr)
+	t.SetOutputMirror(out)
+	t.Render()
+}
+
+func makePredictionTable(rowData []predictRowData, currencyCode string, showCostPerResourceHr bool) table.Writer {
+	t := table.NewWriter()
+
+	columnConfigs := []table.ColumnConfig{
+		table.ColumnConfig{
+			Name: PredictColWorkload,
+		},
+		table.ColumnConfig{
+			Name: PredictColReqCPU,
+		},
+		table.ColumnConfig{
+			Name: PredictColReqMemory,
+		},
+	}
+
+	if showCostPerResourceHr {
+		columnConfigs = append(columnConfigs, []table.ColumnConfig{
+			table.ColumnConfig{
+				Name: PredictColCostCoreHr,
+			},
+			table.ColumnConfig{
+				Name: PredictColCostGiBHr,
+			},
+		}...)
+	}
+
+	columnConfigs = append(columnConfigs, []table.ColumnConfig{
+		table.ColumnConfig{
+			Name:        PredictColMoCostCPU,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+		table.ColumnConfig{
+			Name:        PredictColMoCostMemory,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+		table.ColumnConfig{
+			Name:        PredictColMoCostTotal,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+	}...)
+	t.SetColumnConfigs(columnConfigs)
+
+	headerRow := table.Row{
+		PredictColWorkload,
+		PredictColReqCPU,
+		PredictColReqMemory,
+	}
+
+	if showCostPerResourceHr {
+		headerRow = append(headerRow,
+			PredictColCostCoreHr,
+			PredictColCostGiBHr,
+		)
+	}
+
+	headerRow = append(headerRow,
+		PredictColMoCostCPU,
+		PredictColMoCostMemory,
+		PredictColMoCostTotal,
+	)
+
+	t.AppendHeader(headerRow)
+
+	t.SortBy([]table.SortBy{
+		{
+			Name: PredictColMoCostTotal,
+			Mode: table.DscNumeric,
+		},
+	})
+
+	var summedMonthlyCPU float64
+	var summedMonthlyMem float64
+	var summedMonthlyTotal float64
+
+	for _, rowDatum := range rowData {
+		row := table.Row{}
+		row = append(row, fmt.Sprintf("%s/%s", rowDatum.workloadType, rowDatum.workloadName))
+		row = append(row, rowDatum.cpuStr)
+		row = append(row, rowDatum.memStr)
+
+		if showCostPerResourceHr {
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerCoreHour, currencyCode))
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerByteHour*1024*1024*1024, currencyCode))
+		}
+
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostCPU, currencyCode))
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostMemory, currencyCode))
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostTotal, currencyCode))
+
+		summedMonthlyCPU += rowDatum.prediction.MonthlyCostCPU
+		summedMonthlyMem += rowDatum.prediction.MonthlyCostMemory
+		summedMonthlyTotal += rowDatum.prediction.MonthlyCostTotal
+
+		t.AppendRow(row)
+	}
+
+	// A summary footer is redundant if there is only one row
+	if len(rowData) > 1 {
+		footerRow := table.Row{}
+		blankRows := 3
+		if showCostPerResourceHr {
+			blankRows += 2
+		}
+		for i := 0; i < blankRows; i++ {
+			footerRow = append(footerRow, "")
+		}
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyCPU, currencyCode))
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyMem, currencyCode))
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyTotal, currencyCode))
+		t.AppendFooter(footerRow)
+	}
+
+	return t
 }
 
 func writeAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts displayOptions, currencyCode string, projectToMonthlyRate bool) {

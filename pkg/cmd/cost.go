@@ -22,6 +22,10 @@ var (
     # based on the last 5 days of activity.
     %[1]s cost namespace --window 5d
 
+    # Predict the cost of the Deployment defined in k8s-deployment.yaml.
+    %[1]s cost predict -f 'k8s-deployment.yaml' \
+      --show-cost-per-resource-hr
+
     # Show how much each namespace cost over the past 5 days
     # with additional CPU and memory cost and without efficiency.
     %[1]s cost namespace \
@@ -177,6 +181,7 @@ helm install \
 	cmd.AddCommand(newCmdCostNode(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
+	cmd.AddCommand(newCmdPredict(streams))
 
 	return cmd
 }

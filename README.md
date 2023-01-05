@@ -62,7 +62,7 @@ with all cost components displayed.
 ``` sh
 kubectl cost namespace --show-all-resources
 ```
-Here is sample output:
+Example output:
 ```
 +-------------------+-----------+----------+----------+-------------+----------+----------+----------+-------------+--------------------+
 | NAMESPACE         | CPU       | CPU EFF. | MEMORY   | MEMORY EFF. | GPU      | PV       | NETWORK  | SHARED COST | MONTHLY RATE (ALL) |
@@ -79,6 +79,44 @@ Here is sample output:
 +-------------------+-----------+----------+----------+-------------+----------+----------+----------+-------------+--------------------+
 ```
 
+Predict the cost of a YAML spec based on its requests:
+``` sh
+read -r -d '' DEF << EndOfMessage
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.14.2
+        resources:
+          requests:
+            cpu: "3"
+            memory: "2Gi"
+EndOfMessage
+echo "$DEF" | kubectl cost predict -f -
+```
+Example output:
+```
++-----------------------------+-----+-----+------------+-----------+------------+
+| WORKLOAD                    | CPU | MEM | CPU/MO     | MEM/MO    | TOTAL/MO   |
++-----------------------------+-----+-----+------------+-----------+------------+
+| Deployment/nginx-deployment | 9   | 6Gi | 209.51 USD | 18.73 USD | 228.24 USD |
++-----------------------------+-----+-----+------------+-----------+------------+
+```
+
 Show how much each namespace cost over the past 5 days
 with additional CPU and memory cost and without efficiency.
 ``` sh
@@ -88,6 +126,12 @@ kubectl cost namespace \
   --show-cpu \
   --show-memory \
   --show-efficiency=false
+```
+
+Predict the cost of the Deployment defined in k8s-deployment.yaml.
+``` sh
+kubectl cost predict -f 'k8s-deployment.yaml' \
+  --show-cost-per-resource-hr
 ```
 
 Show the projected monthly rate for each controller
@@ -168,32 +212,25 @@ Which yields an output with this format:
 ```
 
 #### Flags
-See `kubectl cost [subcommand] --help` for the full set of flags.
+See `kubectl cost [subcommand] --help` for the full set of flags. Each
+subcommand has its own set of flags for adjusting query behavior and output.
 
-The following flags modify the behavior of the subcommands:
+There are several flags that modify the behavior of queries to the backing
+Kubecost/OpenCost APIs:
 ```
-    --historical                  show the total cost during the window instead of the projected monthly rate based on the data in the window"
-    --show-asset-type             show type of assets displayed.
-    --show-cpu                    show data for CPU cost
-    --show-efficiency             show efficiency of cost alongside cost where available (default true)
-    --show-gpu                    show data for GPU cost
-    --show-lb                     show load balancer cost data
-    --show-memory                 show data for memory cost
-    --show-network                show data for network cost
-    --show-pv                     show data for PV (physical volume) cost
-    --show-shared                 show shared cost data
--A, --show-all-resources          Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.
-    --window string               The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here. (default "1d")
--n, --namespace string            Limit results to only one namespace. Defaults to all namespaces.
-    --service-name string         The name of the kubecost cost analyzer service. Change if you're running a non-standard deployment, like the staging helm chart. (default "kubecost-cost-analyzer")
+    -r, --release-name string                 The name of the Helm release, used to template service names if they are unset. For example, if Kubecost is installed with 'helm install kubecost2 kubecost/cost-analyzer', then this should be set to 'kubecost2'. (default "kubecost")
+    --service-name string                 The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.
     --service-port int               The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003. (default 9090)
-    --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
--N, --kubecost-namespace string   The namespace that kubecost is deployed in. Requests to the API will be directed to this namespace. (default "kubecost")
+    -N, --kubecost-namespace string           The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.
+
     --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
+
+    --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
+    --predict-resource-cost-path string   URL path at which Resource Cost Prediction queries can be served from the configured service. (default "/model/prediction/resourcecost")
 ```
 
 
-`kubectl cost` has to interact with the Kubernetes API server. It tries to use your kubeconfig. These flags are common to `kubectl` and allow you to customize this behavior.
+`kubectl cost` has to interact with the Kubernetes API server. It tries to use your existing kubeconfig. These flags are common to `kubectl` and allow you to customize this behavior:
 ``` sh
       --as string                      Username to impersonate for the operation
       --as-group stringArray           Group to impersonate for the operation, this flag can be repeated to specify multiple groups.
