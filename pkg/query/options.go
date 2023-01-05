@@ -40,6 +40,9 @@ type QueryBackendOptions struct {
 	// A path which can serve Resource Cost Prediction queries,
 	// e.g. "/prediction/resourcecost"
 	PredictResourceCostPath string
+	// A path which can serve PV Cost Prediction queries,
+	// e.g. "/prediction/pvcost"
+	PredictPVCostPath string
 
 	restConfig *rest.Config
 	pfQuerier  *PortForwardQuerier

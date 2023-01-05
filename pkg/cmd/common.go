@@ -70,6 +70,7 @@ func addQueryBackendOptionsFlags(cmd *cobra.Command, options *query.QueryBackend
 	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
 	cmd.Flags().StringVar(&options.AllocationPath, "allocation-path", "/model/allocation", "URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute'")
 	cmd.Flags().StringVar(&options.PredictResourceCostPath, "predict-resource-cost-path", "/model/prediction/resourcecost", "URL path at which Resource Cost Prediction queries can be served from the configured service.")
+	cmd.Flags().StringVar(&options.PredictPVCostPath, "predict-resource-cost-path", "/model/prediction/pvcost", "URL path at which PV Cost Prediction queries can be served from the configured service.")
 
 	//Check if environment variable KUBECTL_COST_USE_PROXY is set, it defaults to false
 	v := viper.New()
