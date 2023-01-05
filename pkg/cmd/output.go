@@ -65,12 +65,6 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 			Name: PredictColReqMemory,
 		},
 	}
-	// table.ColumnConfig{
-	// 	Name: PredictColMoCoreHours,
-	// },
-	// table.ColumnConfig{
-	// 	Name: PredictColMoGibHours,
-	// },
 
 	if showCostPerResourceHr {
 		columnConfigs = append(columnConfigs, []table.ColumnConfig{
@@ -108,9 +102,6 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		PredictColReqMemory,
 	}
 
-	// PredictColMoCoreHours,
-	// PredictColMoGibHours,
-
 	if showCostPerResourceHr {
 		headerRow = append(headerRow,
 			PredictColCostCoreHr,
@@ -142,9 +133,6 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		row = append(row, fmt.Sprintf("%s/%s", rowDatum.workloadType, rowDatum.workloadName))
 		row = append(row, rowDatum.cpuStr)
 		row = append(row, rowDatum.memStr)
-
-		// row = append(row, prediction.MonthlyCoreHours)
-		// row = append(row, fmt.Sprintf("%.2f", prediction.MonthlyByteHours/1024/1024/1024))
 
 		if showCostPerResourceHr {
 			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerCoreHour, currencyCode))
