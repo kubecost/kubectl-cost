@@ -27,6 +27,10 @@ import (
 	"k8s.io/client-go/kubernetes/scheme"
 )
 
+const (
+	resourceGPUKey = "gpu"
+)
+
 // PredictOptions contains options specific to prediction queries.
 type PredictOptions struct {
 	window string
@@ -105,6 +109,7 @@ func (predictO *PredictOptions) Complete(restConfig *rest.Config) error {
 func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
 	podMemory := resource.NewQuantity(0, resource.BinarySI)
 	podCPU := resource.NewMilliQuantity(0, resource.DecimalSI)
+	podGPU := resource.NewQuantity(0, resource.DecimalSI)
 
 	for _, cntr := range spec.Containers {
 		requests := cntr.Resources.Requests
@@ -114,19 +119,47 @@ func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
 		if cpu, ok := requests[corev1.ResourceCPU]; ok {
 			podCPU.Add(cpu)
 		}
+
+		// GPU is only defined in limits:
+		// https://kubernetes.io/docs/tasks/manage-gpus/scheduling-gpus/
+		limits := cntr.Resources.Limits
+		// https://github.com/RadeonOpenCompute/k8s-device-plugin/blob/master/example/pod/alexnet-gpu.yaml
+		if amdGPU, ok := limits["amd.com/gpu"]; ok {
+
+			podGPU.Add(amdGPU)
+		}
+		// https://github.com/intel/intel-device-plugins-for-kubernetes/blob/1380d24ee9766942f97dcce813b9868565a29218/README.md#L235
+		// https://github.com/intel/intel-device-plugins-for-kubernetes/blob/1380d24ee9766942f97dcce813b9868565a29218/demo/intelgpu-job.yaml#L22
+		if intelGPU, ok := limits["gpu.intel.com/i915"]; ok {
+			podGPU.Add(intelGPU)
+		}
+		// https://github.com/NVIDIA/k8s-device-plugin#running-gpu-jobs
+		if nvidiaGPU, ok := limits["nvidia.com/gpu"]; ok {
+			podGPU.Add(nvidiaGPU)
+		}
 	}
 
 	totalMemory := resource.NewQuantity(0, resource.BinarySI)
 	totalCPU := resource.NewMilliQuantity(0, resource.DecimalSI)
+	totalGPU := resource.NewQuantity(0, resource.DecimalSI)
 	for i := 0; i < replicas; i++ {
 		totalMemory.Add(*podMemory)
 		totalCPU.Add(*podCPU)
+		totalGPU.Add(*podGPU)
 	}
 
-	return v1.ResourceList{
+	result := v1.ResourceList{
 		v1.ResourceCPU:    *totalCPU,
 		v1.ResourceMemory: *totalMemory,
 	}
+
+	// Only include GPU data if we have any. Put under the generic "gpu"
+	// name because we don't (currently) distinguish between providers.
+	if !podGPU.IsZero() {
+		result[resourceGPUKey] = *podGPU
+	}
+
+	return result
 }
 
 type predictRowData struct {
@@ -135,6 +168,7 @@ type predictRowData struct {
 
 	memStr string
 	cpuStr string
+	gpuStr string
 
 	prediction query.ResourceCostPredictionResponse
 }
@@ -244,6 +278,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 
 		memStr := "0"
 		cpuStr := "0"
+		gpuStr := "0"
 		if mem, ok := totalResources[v1.ResourceMemory]; ok {
 			ptr := &mem
 			memStr = ptr.String()
@@ -252,16 +287,23 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			ptr := &cpu
 			cpuStr = ptr.String()
 		}
+		if gpu, ok := totalResources[resourceGPUKey]; ok {
+			ptr := &gpu
+			gpuStr = ptr.String()
+		}
+
+		queryParams := map[string]string{
+			"window":          no.window,
+			"clusterID":       no.clusterID,
+			"requestedMemory": memStr,
+			"requestedCPU":    cpuStr,
+			"requestedGPU":    gpuStr,
+		}
 		prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
 			RestConfig:          ko.restConfig,
 			Ctx:                 context.Background(),
 			QueryBackendOptions: no.QueryBackendOptions,
-			QueryParams: map[string]string{
-				"window":          no.window,
-				"clusterID":       no.clusterID,
-				"requestedMemory": memStr,
-				"requestedCPU":    cpuStr,
-			},
+			QueryParams:         queryParams,
 		})
 		if err != nil {
 			return fmt.Errorf("prediction query failed: %s", err)
@@ -272,6 +314,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			workloadType: kind,
 			memStr:       memStr,
 			cpuStr:       cpuStr,
+			gpuStr:       gpuStr,
 			prediction:   prediction,
 		})
 	}

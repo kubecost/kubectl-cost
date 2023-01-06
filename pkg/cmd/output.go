@@ -32,12 +32,16 @@ const (
 	PredictColWorkload     = "Workload"
 	PredictColReqCPU       = "CPU"
 	PredictColReqMemory    = "Mem"
+	PredictColReqGPU       = "GPU"
 	PredictColMoCoreHours  = "Mo. core-hrs"
 	PredictColMoGibHours   = "Mo. GiB-hrs"
+	PredictColMoGPUHours   = "Mo. GPU-hrs"
 	PredictColCostCoreHr   = "Cost/core-hr"
 	PredictColCostGiBHr    = "Cost/GiB-hr"
+	PredictColCostGPUHr    = "Cost/GPU-hr"
 	PredictColMoCostCPU    = "CPU/mo"
 	PredictColMoCostMemory = "Mem/mo"
+	PredictColMoCostGPU    = "GPU/mo"
 	PredictColMoCostTotal  = "Total/mo"
 )
 
@@ -64,6 +68,9 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		table.ColumnConfig{
 			Name: PredictColReqMemory,
 		},
+		table.ColumnConfig{
+			Name: PredictColReqGPU,
+		},
 	}
 
 	if showCostPerResourceHr {
@@ -73,6 +80,9 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 			},
 			table.ColumnConfig{
 				Name: PredictColCostGiBHr,
+			},
+			table.ColumnConfig{
+				Name: PredictColCostGPUHr,
 			},
 		}...)
 	}
@@ -89,6 +99,11 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 			AlignFooter: text.AlignRight,
 		},
 		table.ColumnConfig{
+			Name:        PredictColMoCostGPU,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+		table.ColumnConfig{
 			Name:        PredictColMoCostTotal,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
@@ -100,18 +115,21 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		PredictColWorkload,
 		PredictColReqCPU,
 		PredictColReqMemory,
+		PredictColReqGPU,
 	}
 
 	if showCostPerResourceHr {
 		headerRow = append(headerRow,
 			PredictColCostCoreHr,
 			PredictColCostGiBHr,
+			PredictColCostGPUHr,
 		)
 	}
 
 	headerRow = append(headerRow,
 		PredictColMoCostCPU,
 		PredictColMoCostMemory,
+		PredictColMoCostGPU,
 		PredictColMoCostTotal,
 	)
 
@@ -126,6 +144,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 
 	var summedMonthlyCPU float64
 	var summedMonthlyMem float64
+	var summedMonthlyGPU float64
 	var summedMonthlyTotal float64
 
 	for _, rowDatum := range rowData {
@@ -133,18 +152,22 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		row = append(row, fmt.Sprintf("%s/%s", rowDatum.workloadType, rowDatum.workloadName))
 		row = append(row, rowDatum.cpuStr)
 		row = append(row, rowDatum.memStr)
+		row = append(row, rowDatum.gpuStr)
 
 		if showCostPerResourceHr {
-			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerCoreHour, currencyCode))
-			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerByteHour*1024*1024*1024, currencyCode))
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerCPUCoreHour, currencyCode))
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerMemoryByteHour*1024*1024*1024, currencyCode))
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerGPUHour, currencyCode))
 		}
 
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostCPU, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostMemory, currencyCode))
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostGPU, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostTotal, currencyCode))
 
 		summedMonthlyCPU += rowDatum.prediction.MonthlyCostCPU
 		summedMonthlyMem += rowDatum.prediction.MonthlyCostMemory
+		summedMonthlyGPU += rowDatum.prediction.MonthlyCostGPU
 		summedMonthlyTotal += rowDatum.prediction.MonthlyCostTotal
 
 		t.AppendRow(row)
@@ -153,7 +176,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 	// A summary footer is redundant if there is only one row
 	if len(rowData) > 1 {
 		footerRow := table.Row{}
-		blankRows := 3
+		blankRows := 4
 		if showCostPerResourceHr {
 			blankRows += 2
 		}
@@ -162,6 +185,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		}
 		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyCPU, currencyCode))
 		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyMem, currencyCode))
+		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyGPU, currencyCode))
 		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyTotal, currencyCode))
 		t.AppendFooter(footerRow)
 	}

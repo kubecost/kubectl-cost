@@ -60,3 +60,22 @@ spec:
       requests:
         cpu: "350m"
         memory: "200Mi"
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx-pod
+  labels:
+    app: nginx
+spec:
+  containers:
+  - name: nginx
+    image: nginx:1.14.2
+    resources:
+      requests:
+        cpu: "350m"
+        memory: "200Mi"
+      limits:
+        nvidia.com/gpu: 1
+        amd.com/gpu: 1
+        gpu.intel.com/i915: 1
