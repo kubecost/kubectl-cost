@@ -63,6 +63,8 @@ func (o *QueryBackendOptions) Complete(restConfig *rest.Config) error {
 			return fmt.Errorf("port-forwarding requested service '%s' (port %d) in namespace '%s': %s", o.ServiceName, o.ServicePort, o.KubecostNamespace, err)
 		}
 		o.pfQuerier = pfQ
+	} else {
+		o.restConfig = restConfig
 	}
 	return nil
 }
