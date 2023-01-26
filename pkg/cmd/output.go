@@ -29,20 +29,24 @@ const (
 	CPUCostCol          = "CPU Cost"
 	RAMCostCol          = "RAM Cost"
 
-	PredictColWorkload     = "Workload"
-	PredictColReqCPU       = "CPU"
-	PredictColReqMemory    = "Mem"
-	PredictColReqGPU       = "GPU"
-	PredictColMoCoreHours  = "Mo. core-hrs"
-	PredictColMoGibHours   = "Mo. GiB-hrs"
-	PredictColMoGPUHours   = "Mo. GPU-hrs"
-	PredictColCostCoreHr   = "Cost/core-hr"
-	PredictColCostGiBHr    = "Cost/GiB-hr"
-	PredictColCostGPUHr    = "Cost/GPU-hr"
-	PredictColMoCostCPU    = "CPU/mo"
-	PredictColMoCostMemory = "Mem/mo"
-	PredictColMoCostGPU    = "GPU/mo"
-	PredictColMoCostTotal  = "Total/mo"
+	PredictColWorkload          = "Workload"
+	PredictColReqCPU            = "CPU"
+	PredictColReqMemory         = "Mem"
+	PredictColReqGPU            = "GPU"
+	PredictColReqStorage        = "Storage"
+	PredictColMoCoreHours       = "Mo. core-hrs"
+	PredictColMoGibHours        = "Mo. GiB-hrs"
+	PredictColMoGPUHours        = "Mo. GPU-hrs"
+	PredictColMoStorageGiBHours = "Mo. storage GiB-hrs"
+	PredictColCostCoreHr        = "Cost/core-hr"
+	PredictColCostGiBHr         = "Cost/GiB-hr"
+	PredictColCostGPUHr         = "Cost/GPU-hr"
+	PredictColCostStorageGiBHr  = "Cost/storage GiB-hr"
+	PredictColMoCostCPU         = "CPU/mo"
+	PredictColMoCostMemory      = "Mem/mo"
+	PredictColMoCostGPU         = "GPU/mo"
+	PredictColMoCostStorage     = "Storage/mo"
+	PredictColMoCostTotal       = "Total/mo"
 )
 
 func formatFloat(f float64) string {
@@ -71,6 +75,9 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		table.ColumnConfig{
 			Name: PredictColReqGPU,
 		},
+		table.ColumnConfig{
+			Name: PredictColReqStorage,
+		},
 	}
 
 	if showCostPerResourceHr {
@@ -83,6 +90,9 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 			},
 			table.ColumnConfig{
 				Name: PredictColCostGPUHr,
+			},
+			table.ColumnConfig{
+				Name: PredictColCostStorageGiBHr,
 			},
 		}...)
 	}
@@ -104,6 +114,11 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 			AlignFooter: text.AlignRight,
 		},
 		table.ColumnConfig{
+			Name:        PredictColMoCostStorage,
+			Align:       text.AlignRight,
+			AlignFooter: text.AlignRight,
+		},
+		table.ColumnConfig{
 			Name:        PredictColMoCostTotal,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
@@ -116,6 +131,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		PredictColReqCPU,
 		PredictColReqMemory,
 		PredictColReqGPU,
+		PredictColReqStorage,
 	}
 
 	if showCostPerResourceHr {
@@ -123,6 +139,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 			PredictColCostCoreHr,
 			PredictColCostGiBHr,
 			PredictColCostGPUHr,
+			PredictColCostStorageGiBHr,
 		)
 	}
 
@@ -130,6 +147,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		PredictColMoCostCPU,
 		PredictColMoCostMemory,
 		PredictColMoCostGPU,
+		PredictColMoCostStorage,
 		PredictColMoCostTotal,
 	)
 
@@ -145,6 +163,7 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 	var summedMonthlyCPU float64
 	var summedMonthlyMem float64
 	var summedMonthlyGPU float64
+	var summedMonthlyStorage float64
 	var summedMonthlyTotal float64
 
 	for _, rowDatum := range rowData {
@@ -153,16 +172,19 @@ func makePredictionTable(rowData []predictRowData, currencyCode string, showCost
 		row = append(row, rowDatum.cpuStr)
 		row = append(row, rowDatum.memStr)
 		row = append(row, rowDatum.gpuStr)
+		row = append(row, rowDatum.storageStr)
 
 		if showCostPerResourceHr {
 			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerCPUCoreHour, currencyCode))
 			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerMemoryByteHour*1024*1024*1024, currencyCode))
 			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerGPUHour, currencyCode))
+			row = append(row, fmt.Sprintf("%.4f %s", rowDatum.prediction.DerivedCostPerStorageGiBHr, currencyCode))
 		}
 
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostCPU, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostMemory, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostGPU, currencyCode))
+		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostStorage, currencyCode))
 		row = append(row, fmt.Sprintf("%.2f %s", rowDatum.prediction.MonthlyCostTotal, currencyCode))
 
 		summedMonthlyCPU += rowDatum.prediction.MonthlyCostCPU

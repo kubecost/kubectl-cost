@@ -239,9 +239,14 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 
 	var rowData []predictRowData
 	for _, obj := range objs {
-		var totalResources v1.ResourceList
 		var name string
 		var kind string
+
+		isStorage := false
+		var totalResources v1.ResourceList
+		var storageQty resource.Quantity
+		var storageClass string
+
 		switch typed := obj.(type) {
 		case *appsv1.Deployment:
 			replicas := 1
@@ -272,6 +277,26 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			kind = "DaemonSet"
 			log.Warnf("DaemonSets are not supported because scheduling-dependent workloads are not yet supported. Skipping %s/%s.", kind, name)
 			continue
+		case *v1.PersistentVolumeClaim:
+			name = typed.Name
+			kind = "PersistentVolumeClaim"
+			isStorage = true
+			if typed.Spec.StorageClassName != nil {
+				storageClass = *typed.Spec.StorageClassName
+			} else {
+				// TODO: Set to actual default
+				storageClass = "???-kubectl-cost-predict-unknown"
+			}
+			// TODO TODO TODO
+			// TODO TODO TODO Make separate storage rows for now, return
+			// TODO TODO TODO to alloating to pods later.
+			// TODO TODO TODO
+			var ok bool
+			storageQty, ok = typed.Spec.Resources.Requests[v1.ResourceStorage]
+			if !ok {
+				log.Warnf("Cannot predict storage cost for a PVC (%s) with no requested storage. Skipping.", name)
+				continue
+			}
 		default:
 			return fmt.Errorf("unsupported type: %T", obj)
 		}
