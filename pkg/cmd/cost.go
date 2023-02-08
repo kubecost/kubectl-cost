@@ -87,6 +87,11 @@ type KubeOptions struct {
 	restConfig *rest.Config
 	args       []string
 
+	// Namespace should be the currently-configured defaultNamespace of the client.
+	// This allows e.g. predict to fill in the defaultNamespace if one is not provided
+	// in the workload spec.
+	defaultNamespace string
+
 	genericclioptions.IOStreams
 }
 
@@ -194,7 +199,12 @@ func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
 
 	o.restConfig, err = o.configFlags.ToRESTConfig()
 	if err != nil {
-		return err
+		return fmt.Errorf("converting to REST config: %s", err)
+	}
+
+	o.defaultNamespace, _, err = o.configFlags.ToRawKubeConfigLoader().Namespace()
+	if err != nil {
+		return fmt.Errorf("retrieving default namespace: %s", err)
 	}
 
 	return nil
