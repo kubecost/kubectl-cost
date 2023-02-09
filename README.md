@@ -6,7 +6,7 @@ and predicted future cost, via [Kubecost's APIs](https://docs.kubecost.com/). It
 allows developers, devops, and others to quickly determine the cost & efficiency
 of any Kubernetes workload.
 
-> If you use [OpenCost](https://github.com/opencost/opencost), most of 
+> Note: If you use [OpenCost](https://github.com/opencost/opencost), most of 
 > `kubectl cost` works! See the [OpenCost documentation](https://www.opencost.io/docs/kubectl-cost)
 > for examples. Let us know how it goes, and open an issue if you encounter any
 > problems!
