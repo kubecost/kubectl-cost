@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
 
@@ -29,6 +30,7 @@ import (
 
 const (
 	resourceGPUKey = "gpu"
+	hoursPerMonth  = 730
 )
 
 // PredictOptions contains options specific to prediction queries.
@@ -41,6 +43,7 @@ type PredictOptions struct {
 	filepath string
 
 	showCostPerResourceHr bool
+	noDiff                bool
 
 	query.QueryBackendOptions
 }
@@ -73,9 +76,10 @@ func newCmdPredict(
 		},
 	}
 	cmd.Flags().StringVarP(&predictO.filepath, "filepath", "f", "", "The file containing the workload definition whose cost should be predicted. E.g. a file might be 'test-deployment.yaml' containing an apps/v1 Deployment definition. '-' can also be passed, in which case workload definitions will be read from stdin.")
-	cmd.Flags().StringVarP(&predictO.clusterID, "cluster-id", "c", "", "The cluster ID (in Kubecost) of the presumed cluster which the workload will be deployed to. This is used to determine resource costs. Defaults to all clusters.")
+	cmd.Flags().StringVarP(&predictO.clusterID, "cluster-id", "c", "", "The cluster ID (in Kubecost) of the presumed cluster which the workload will be deployed to. This is used to determine resource costs. Defaults to local cluster.")
 	cmd.Flags().BoolVar(&predictO.showCostPerResourceHr, "show-cost-per-resource-hr", false, "Show the calculated cost per resource-hr (e.g. $/byte-hour) used for the cost prediction.")
 	cmd.Flags().StringVar(&predictO.window, "window", "2d", "The window of cost data to base resource costs on. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
+	cmd.Flags().BoolVar(&predictO.noDiff, "no-diff", false, "Set true to not attempt a cost difference with a matching in-cluster workload, if one can be found.")
 
 	addQueryBackendOptionsFlags(cmd, &predictO.QueryBackendOptions)
 	addKubeOptionsFlags(cmd, kubeO)
@@ -162,20 +166,40 @@ func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
 	return result
 }
 
+type prePredictionData struct {
+	workloadNamespace string
+	workloadType      string
+	workloadName      string
+
+	totalRequested v1.ResourceList
+}
+
 type predictRowData struct {
-	workloadName string
-	workloadType string
+	workloadNamespace string
+	workloadType      string
+	workloadName      string
 
-	memStr string
-	cpuStr string
-	gpuStr string
+	totalCPURequested    string
+	totalMemoryRequested string
+	totalGPURequested    string
 
-	prediction query.ResourceCostPredictionResponse
+	requestedCPUCoreHours    float64
+	requestedMemoryByteHours float64
+	requestedGPUHours        float64
+
+	cpuCostMonthly    float64
+	memoryCostMonthly float64
+	gpuCostMonthly    float64
+	totalCostMonthly  float64
+
+	cpuCostChangeMonthly    float64
+	memoryCostChangeMonthly float64
 }
 
 func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 	var b []byte
 	var err error
+
 	if no.filepath == "-" {
 		reader := bufio.NewReader(ko.In)
 
@@ -237,10 +261,11 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		objs = append(objs, obj)
 	}
 
-	var rowData []predictRowData
+	var prePred []prePredictionData
 	for _, obj := range objs {
 		var totalResources v1.ResourceList
 		var name string
+		var namespace string
 		var kind string
 		switch typed := obj.(type) {
 		case *appsv1.Deployment:
@@ -252,6 +277,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			}
 			name = typed.Name
 			kind = "Deployment"
+			namespace = typed.Namespace
 			totalResources = sumContainerResources(replicas, typed.Spec.Template.Spec)
 		case *appsv1.StatefulSet:
 			replicas := 1
@@ -262,61 +288,143 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 			}
 			name = typed.Name
 			kind = "StatefulSet"
+			namespace = typed.Namespace
 			totalResources = sumContainerResources(replicas, typed.Spec.Template.Spec)
 		case *v1.Pod:
 			name = typed.Name
 			kind = "Pod"
+			namespace = typed.Namespace
 			totalResources = sumContainerResources(1, typed.Spec)
 		case *appsv1.DaemonSet:
 			name = typed.Name
 			kind = "DaemonSet"
+			namespace = typed.Namespace
 			log.Warnf("DaemonSets are not supported because scheduling-dependent workloads are not yet supported. Skipping %s/%s.", kind, name)
 			continue
 		default:
 			return fmt.Errorf("unsupported type: %T", obj)
 		}
 
+		// If the workload doesn't have a namespace specified, try to use the
+		// one we retrieved in K8s config
+		if namespace == "" {
+			namespace = ko.defaultNamespace
+		}
+
+		prePred = append(prePred, prePredictionData{
+			workloadNamespace: namespace,
+			workloadType:      kind,
+			workloadName:      name,
+			totalRequested:    totalResources,
+		})
+	}
+
+	var rows []predictRowData
+	for _, pre := range prePred {
+		totalResources := pre.totalRequested
 		memStr := "0"
 		cpuStr := "0"
 		gpuStr := "0"
+		var cpuCoreHours, memoryByteHours, gpuHours float64
 		if mem, ok := totalResources[v1.ResourceMemory]; ok {
 			ptr := &mem
 			memStr = ptr.String()
+			memoryByteHours = mem.AsApproximateFloat64() * hoursPerMonth
 		}
 		if cpu, ok := totalResources[v1.ResourceCPU]; ok {
 			ptr := &cpu
 			cpuStr = ptr.String()
+			cpuCoreHours = cpu.AsApproximateFloat64() * hoursPerMonth
 		}
 		if gpu, ok := totalResources[resourceGPUKey]; ok {
 			ptr := &gpu
 			gpuStr = ptr.String()
+			gpuHours = gpu.AsApproximateFloat64() * hoursPerMonth
 		}
 
-		queryParams := map[string]string{
-			"window":          no.window,
-			"clusterID":       no.clusterID,
-			"requestedMemory": memStr,
-			"requestedCPU":    cpuStr,
-			"requestedGPU":    gpuStr,
-		}
-		prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
-			RestConfig:          ko.restConfig,
-			Ctx:                 context.Background(),
-			QueryBackendOptions: no.QueryBackendOptions,
-			QueryParams:         queryParams,
-		})
-		if err != nil {
-			return fmt.Errorf("prediction query failed: %s", err)
-		}
+		if no.noDiff {
+			queryParams := map[string]string{
+				"window":          no.window,
+				"clusterID":       no.clusterID,
+				"requestedMemory": memStr,
+				"requestedCPU":    cpuStr,
+				"requestedGPU":    gpuStr,
+			}
+			prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
+				RestConfig:          ko.restConfig,
+				Ctx:                 context.Background(),
+				QueryBackendOptions: no.QueryBackendOptions,
+				QueryParams:         queryParams,
+			})
+			if err != nil {
+				return fmt.Errorf("prediction query failed: %s", err)
+			}
 
-		rowData = append(rowData, predictRowData{
-			workloadName: name,
-			workloadType: kind,
-			memStr:       memStr,
-			cpuStr:       cpuStr,
-			gpuStr:       gpuStr,
-			prediction:   prediction,
-		})
+			rows = append(rows, predictRowData{
+				workloadName:      pre.workloadName,
+				workloadType:      pre.workloadType,
+				workloadNamespace: pre.workloadNamespace,
+
+				totalCPURequested:    cpuStr,
+				totalMemoryRequested: memStr,
+				totalGPURequested:    gpuStr,
+
+				requestedCPUCoreHours:    cpuCoreHours,
+				requestedMemoryByteHours: memoryByteHours,
+				requestedGPUHours:        gpuHours,
+
+				cpuCostMonthly:    prediction.MonthlyCostCPU,
+				memoryCostMonthly: prediction.MonthlyCostMemory,
+				gpuCostMonthly:    prediction.MonthlyCostGPU,
+				totalCostMonthly:  prediction.MonthlyCostTotal,
+
+				cpuCostChangeMonthly:    prediction.MonthlyCostCPU,
+				memoryCostChangeMonthly: prediction.MonthlyCostMemory,
+			})
+		} else {
+			queryParams := map[string]string{
+				"window":          no.window,
+				"clusterID":       no.clusterID,
+				"requestedMemory": memStr,
+				"requestedCPU":    cpuStr,
+				"requestedGPU":    gpuStr,
+
+				"controllerNamespace": pre.workloadNamespace,
+				"controllerKind":      strings.ToLower(pre.workloadType),
+				"controllerName":      pre.workloadName,
+			}
+			prediction, err := query.QueryPredictResourceCostDiff(query.ResourceDiffPredictParameters{
+				RestConfig:          ko.restConfig,
+				Ctx:                 context.Background(),
+				QueryBackendOptions: no.QueryBackendOptions,
+				QueryParams:         queryParams,
+			})
+			if err != nil {
+				return fmt.Errorf("prediction query failed: %s", err)
+			}
+
+			rows = append(rows, predictRowData{
+				workloadName:      pre.workloadName,
+				workloadType:      pre.workloadType,
+				workloadNamespace: pre.workloadNamespace,
+
+				totalCPURequested:    cpuStr,
+				totalMemoryRequested: memStr,
+				totalGPURequested:    gpuStr,
+
+				requestedCPUCoreHours:    cpuCoreHours,
+				requestedMemoryByteHours: memoryByteHours,
+				requestedGPUHours:        gpuHours,
+
+				cpuCostMonthly:    prediction.MonthlyCostCPU,
+				memoryCostMonthly: prediction.MonthlyCostMemory,
+				gpuCostMonthly:    prediction.MonthlyCostGPU,
+				totalCostMonthly:  prediction.MonthlyCostTotal,
+
+				cpuCostChangeMonthly:    prediction.MonthlyCostCPUDiff,
+				memoryCostChangeMonthly: prediction.MonthlyCostMemoryDiff,
+			})
+		}
 	}
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		Ctx:                 context.Background(),
@@ -327,6 +435,10 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		currencyCode = ""
 	}
 
-	writePredictionTable(ko.Out, rowData, currencyCode, no.showCostPerResourceHr)
+	writePredictionTable(ko.Out, rows, predictionTableOptions{
+		currencyCode:          currencyCode,
+		showCostPerResourceHr: no.showCostPerResourceHr,
+		noDiff:                no.noDiff,
+	})
 	return nil
 }

@@ -79,7 +79,7 @@ Example output:
 +-------------------+-----------+----------+----------+-------------+----------+----------+----------+-------------+--------------------+
 ```
 
-Predict the cost of a YAML spec based on its requests:
+Predict the cost impact of a YAML spec based on its requests:
 ``` sh
 read -r -d '' DEF << EndOfMessage
 apiVersion: apps/v1
@@ -110,11 +110,11 @@ echo "$DEF" | kubectl cost predict -f -
 ```
 Example output:
 ```
-+-----------------------------+-----+-----+------------+-----------+------------+
-| WORKLOAD                    | CPU | MEM | CPU/MO     | MEM/MO    | TOTAL/MO   |
-+-----------------------------+-----+-----+------------+-----------+------------+
-| Deployment/nginx-deployment | 9   | 6Gi | 209.51 USD | 18.73 USD | 228.24 USD |
-+-----------------------------+-----+-----+------------+-----------+------------+
++-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
+| WORKLOAD                            | CPU | MEM | GPU | CPU/MO     | MEM/MO    | GPU/MO   | Δ CPU/MO  | Δ MEM/MO  | TOTAL/MO   |
++-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
+| default/Deployment/nginx-deployment | 9   | 6Gi | 0   | 207.68 USD | 18.56 USD | 0.00 USD | 38.30 USD | 11.51 USD | 226.24 USD |
++-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
 ```
 
 Show how much each namespace cost over the past 5 days
@@ -227,6 +227,8 @@ Kubecost/OpenCost APIs:
 
     --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
     --predict-resource-cost-path string   URL path at which Resource Cost Prediction queries can be served from the configured service. (default "/model/prediction/resourcecost")
+    --predict-resource-cost-diff-path string   URL path at which Resource Cost Prediction diff queries can be served from the configured service. (default "/model/prediction/resourcecostdiff")
+    --no-diff                                  Set true to not attempt a cost difference with a matching in-cluster workload, if one can be found.
 ```
 
 

@@ -162,6 +162,8 @@ func (pfq *PortForwardQuerier) queryGet(ctx context.Context, path string, params
 	}
 	req.URL.RawQuery = q.Encode()
 
+	log.Debugf("Executing GET to: %s", req.URL.String())
+
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
