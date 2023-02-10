@@ -1,8 +1,27 @@
 # kubectl-cost
 
-`kubectl-cost` is a [kubectl plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/) that provides easy CLI access to Kubernetes cost allocation metrics via the [kubecost APIs](https://github.com/kubecost/docs/blob/master/apis.md). It allows developers, devops, and others to quickly determine the cost & efficiency for any Kubernetes workload.
+`kubectl-cost` is a [kubectl plugin](https://kubernetes.io/docs/tasks/extend-kubectl/kubectl-plugins/)
+that provides easy CLI access to Kubernetes cost information, like historical cost
+and predicted future cost, via [Kubecost's APIs](https://docs.kubecost.com/). It
+allows developers, devops, and others to quickly determine the cost & efficiency
+of any Kubernetes workload.
 
-> If you use [OpenCost](https://github.com/opencost/opencost), most of `kubectl cost` works! See [OpenCost documentation](https://www.opencost.io/docs/kubectl-cost) for examples. Let us know how it goes, and open an issue if you encounter any problems!
+> Note: If you use [OpenCost](https://github.com/opencost/opencost), most of 
+> `kubectl cost` works! See the [OpenCost documentation](https://www.opencost.io/docs/kubectl-cost)
+> for examples. Let us know how it goes, and open an issue if you encounter any
+> problems!
+
+‼️ New! Starting with Kubecost v1.100, `kubectl cost` can estimate the cost of undeployed changes! Try it
+now with `kubectl cost predict -f your-deployment.yaml`:
+
+```
++-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
+| WORKLOAD                            | CPU | MEM | GPU | CPU/MO     | MEM/MO    | GPU/MO   | Δ CPU/MO  | Δ MEM/MO  | TOTAL/MO   |
++-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
+| default/Deployment/test1-deployment | 9   | 6Gi | 0   | 207.68 USD | 18.56 USD | 0.00 USD | 38.30 USD | 11.51 USD | 226.24 USD |
++-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
+```
+
 
 <img src="assets/regular.gif" alt="Standard CLI Usage" width="600">
 
@@ -51,10 +70,26 @@
 
 ## Usage
 
-There are several supported subcommands: `namespace`, `deployment`, `controller`, `label`, `pod`, `node`, and `tui`, which display cost information aggregated by the name of the subcommand (see Examples). Each subcommand has two primary modes, rate and non-rate. Rate (the default) displays the projected monthly cost based on the activity during the window. Non-rate (`--historical`) displays the total cost for the duration of the window.
+There are several subcommands that focused on aggregation-based cost monitoring:
+`namespace`, `deployment`, `controller`, `label`, `pod`, and `node`. They display
+cost information aggregated by the name of the subcommand (see Examples). Each
+aggregation subcommand has two modes: rate and non-rate. Rate (the default) displays
+the projected monthly cost based on the activity during the window. Non-rate
+(`--historical`) displays the total cost for the duration of the window.
 
-The exception to these descriptions is `kubectl cost tui`, which displays a TUI and is currently limited to only monthly rate projections. It currently supports all of the previously mentioned aggregations except label. These limitations are because the TUI is an experimental feature - if you like it, let us know! We'd be happy to dedicate time to expanding its functionality.
+Starting with v1.100 installations of Kubecost, `kubectl cost predict` is
+available. It uses historical resource cost information in your cluster to
+predict the cost implications of undeployed changes. It currently supports
+Pod, Deployment, and StatefulSet workloads, with more support on the way. It
+accepts YAML-formatted data either in a file (`-f your-file.yaml`) or from
+STDIN (`-f -`).
 
+There is also `kubectl cost tui`, which displays a TUI and is currently limited to
+monthly rate projections. It supports most of the above subcommands while in an
+experimental status.
+
+See the built-in usage info with `--help` to learn more about specific flags
+available for each subcommand.
 
 #### Examples
 Show the projected monthly rate for each namespace
