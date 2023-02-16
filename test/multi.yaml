@@ -70,6 +70,8 @@ spec:
           requests:
             cpu: "2"
             memory: "7Gi"
+          limits:
+            nvidia.com/gpu: 1
 ---
 apiVersion: v1
 kind: Pod
