@@ -159,8 +159,8 @@ func sumContainerResources(replicas int, spec v1.PodSpec) v1.ResourceList {
 
 	// Only include GPU data if we have any. Put under the generic "gpu"
 	// name because we don't (currently) distinguish between providers.
-	if !podGPU.IsZero() {
-		result[resourceGPUKey] = *podGPU
+	if !totalGPU.IsZero() {
+		result[resourceGPUKey] = *totalGPU
 	}
 
 	return result
