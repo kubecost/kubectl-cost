@@ -9,12 +9,14 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kubecost/kubectl-cost/pkg/cmd/display"
+	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/opencost/opencost/pkg/log"
 )
 
 func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStreams, commandName string, commandAliases []string, aggregation []string, enableNamespaceFilter bool) *cobra.Command {
-	kubeO := NewKubeOptions(streams)
+	kubeO := utilities.NewKubeOptions(streams)
 	costO := CostOptions{}
 
 	cmd := &cobra.Command{
@@ -29,7 +31,7 @@ func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStream
 				return err
 			}
 
-			if err := costO.Complete(kubeO.restConfig); err != nil {
+			if err := costO.Complete(kubeO.RestConfig); err != nil {
 				return fmt.Errorf("completing options: %s", err)
 			}
 			if err := costO.Validate(); err != nil {
@@ -46,12 +48,12 @@ func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStream
 	}
 
 	addCostOptionsFlags(cmd, &costO)
-	addKubeOptionsFlags(cmd, kubeO)
+	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
 
-func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation []string) error {
+func runAggregatedAllocationCommand(ko *utilities.KubeOptions, co CostOptions, aggregation []string) error {
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		Ctx:                 context.Background(),
@@ -76,7 +78,7 @@ func runAggregatedAllocationCommand(ko *KubeOptions, co CostOptions, aggregation
 		return fmt.Errorf("failed to query allocation API: %s", err)
 	}
 
-	writeAllocationTable(ko.Out, aggregation, allocations[0], co.displayOptions, currencyCode, !co.isHistorical)
+	display.WriteAllocationTable(ko.Out, aggregation, allocations[0], co.displayOptions, currencyCode, !co.isHistorical)
 
 	return nil
 }

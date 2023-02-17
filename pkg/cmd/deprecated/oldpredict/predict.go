@@ -1,4 +1,4 @@
-package cmd
+package oldpredict
 
 import (
 	"bufio"
@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 
 	"github.com/opencost/opencost/pkg/log"
@@ -48,14 +49,14 @@ type PredictOptions struct {
 	query.QueryBackendOptions
 }
 
-func newCmdPredict(
+func NewCmdOldPredict(
 	streams genericclioptions.IOStreams,
 ) *cobra.Command {
-	kubeO := NewKubeOptions(streams)
+	kubeO := utilities.NewKubeOptions(streams)
 	predictO := &PredictOptions{}
 
 	cmd := &cobra.Command{
-		Use:   "predict",
+		Use:   "oldpredict",
 		Short: "Estimate the monthly cost of a workload based on tracked cluster resource costs.",
 		RunE: func(c *cobra.Command, args []string) error {
 			if err := kubeO.Complete(c, args); err != nil {
@@ -65,7 +66,7 @@ func newCmdPredict(
 				return fmt.Errorf("validate k8s options: %s", err)
 			}
 
-			if err := predictO.Complete(kubeO.restConfig); err != nil {
+			if err := predictO.Complete(kubeO.RestConfig); err != nil {
 				return fmt.Errorf("complete: %s", err)
 			}
 			if err := predictO.Validate(); err != nil {
@@ -81,8 +82,8 @@ func newCmdPredict(
 	cmd.Flags().StringVar(&predictO.window, "window", "2d", "The window of cost data to base resource costs on. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 	cmd.Flags().BoolVar(&predictO.noDiff, "no-diff", false, "Set true to not attempt a cost difference with a matching in-cluster workload, if one can be found.")
 
-	addQueryBackendOptionsFlags(cmd, &predictO.QueryBackendOptions)
-	addKubeOptionsFlags(cmd, kubeO)
+	query.AddQueryBackendOptionsFlags(cmd, &predictO.QueryBackendOptions)
+	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	cmd.SilenceUsage = true
 
@@ -196,7 +197,7 @@ type predictRowData struct {
 	memoryCostChangeMonthly float64
 }
 
-func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
+func runCostPredict(ko *utilities.KubeOptions, no *PredictOptions) error {
 	var b []byte
 	var err error
 
@@ -308,7 +309,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		// If the workload doesn't have a namespace specified, try to use the
 		// one we retrieved in K8s config
 		if namespace == "" {
-			namespace = ko.defaultNamespace
+			namespace = ko.DefaultNamespace
 		}
 
 		prePred = append(prePred, prePredictionData{
@@ -351,7 +352,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 				"requestedGPU":    gpuStr,
 			}
 			prediction, err := query.QueryPredictResourceCost(query.ResourcePredictParameters{
-				RestConfig:          ko.restConfig,
+				RestConfig:          ko.RestConfig,
 				Ctx:                 context.Background(),
 				QueryBackendOptions: no.QueryBackendOptions,
 				QueryParams:         queryParams,
@@ -394,7 +395,7 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 				"controllerName":      pre.workloadName,
 			}
 			prediction, err := query.QueryPredictResourceCostDiff(query.ResourceDiffPredictParameters{
-				RestConfig:          ko.restConfig,
+				RestConfig:          ko.RestConfig,
 				Ctx:                 context.Background(),
 				QueryBackendOptions: no.QueryBackendOptions,
 				QueryParams:         queryParams,
@@ -435,10 +436,10 @@ func runCostPredict(ko *KubeOptions, no *PredictOptions) error {
 		currencyCode = ""
 	}
 
-	writePredictionTable(ko.Out, rows, predictionTableOptions{
-		currencyCode:          currencyCode,
-		showCostPerResourceHr: no.showCostPerResourceHr,
-		noDiff:                no.noDiff,
+	writePredictionTable(ko.Out, rows, PredictionTableOptions{
+		CurrencyCode:          currencyCode,
+		ShowCostPerResourceHr: no.showCostPerResourceHr,
+		NoDiff:                no.noDiff,
 	})
 	return nil
 }

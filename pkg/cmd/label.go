@@ -9,6 +9,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kubecost/kubectl-cost/pkg/cmd/display"
+	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/opencost/opencost/pkg/log"
 )
@@ -23,7 +25,7 @@ type CostOptionsLabel struct {
 }
 
 func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
-	kubeO := NewKubeOptions(streams)
+	kubeO := utilities.NewKubeOptions(streams)
 	labelO := &CostOptionsLabel{}
 
 	cmd := &cobra.Command{
@@ -37,7 +39,7 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := labelO.CostOptions.Complete(kubeO.restConfig); err != nil {
+			if err := labelO.CostOptions.Complete(kubeO.RestConfig); err != nil {
 				return fmt.Errorf("completing options: %s", err)
 			}
 			if err := labelO.CostOptions.Validate(); err != nil {
@@ -56,12 +58,12 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.MarkFlagRequired("label")
 
 	addCostOptionsFlags(cmd, &labelO.CostOptions)
-	addKubeOptionsFlags(cmd, kubeO)
+	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
 
-func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
+func runCostLabel(ko *utilities.KubeOptions, no *CostOptionsLabel) error {
 
 	aggregation := []string{"cluster", fmt.Sprintf("label:%s", no.queryLabel)}
 
@@ -88,7 +90,7 @@ func runCostLabel(ko *KubeOptions, no *CostOptionsLabel) error {
 	}
 
 	// Use allocations[0] because the query accumulates to a single result
-	writeAllocationTable(ko.Out, aggregation, allocations[0], no.displayOptions, currencyCode, !no.isHistorical)
+	display.WriteAllocationTable(ko.Out, aggregation, allocations[0], no.displayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }
