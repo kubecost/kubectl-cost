@@ -73,7 +73,7 @@ func AddAssetDisplayOptionsFlags(cmd *cobra.Command, options *AssetDisplayOption
 	cmd.Flags().BoolVar(&options.ShowCPUCost, "show-cpu", false, "show data for CPU cost")
 	cmd.Flags().BoolVar(&options.ShowMemoryCost, "show-memory", false, "show data for memory cost")
 	cmd.Flags().BoolVar(&options.ShowAssetType, "show-asset-type", false, "show type of assets displayed.")
-	cmd.Flags().BoolVarP(&options.ShowAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.")
+	cmd.Flags().BoolVarP(&options.ShowAll, "show-all-resources", "A", false, "Equivalent to --show-type --show-cpu --show-memory for node.")
 }
 
 func (do *AllocationDisplayOptions) Complete() {
