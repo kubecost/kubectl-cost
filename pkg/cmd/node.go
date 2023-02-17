@@ -18,6 +18,7 @@ import (
 // options specific to node queries.
 type CostOptionsNode struct {
 	CostOptions
+	display.AssetDisplayOptions
 }
 
 func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
@@ -49,6 +50,7 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	addCostOptionsFlags(cmd, &assetsO.CostOptions)
+	display.AddAssetDisplayOptionsFlags(cmd, &assetsO.AssetDisplayOptions)
 	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
@@ -76,7 +78,7 @@ func runCostNode(ko *utilities.KubeOptions, no *CostOptionsNode) error {
 	}
 
 	// Use assets[0] because the query accumulates to a single result
-	display.WriteAssetTable(ko.Out, "Node", assets[0], no.displayOptions, currencyCode, !no.isHistorical)
+	display.WriteAssetTable(ko.Out, "Node", assets[0], no.AssetDisplayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }

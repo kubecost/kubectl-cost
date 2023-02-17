@@ -22,6 +22,7 @@ type CostOptionsLabel struct {
 	queryLabel string
 
 	CostOptions
+	display.AllocationDisplayOptions
 }
 
 func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
@@ -58,6 +59,7 @@ func newCmdCostLabel(streams genericclioptions.IOStreams) *cobra.Command {
 	cmd.MarkFlagRequired("label")
 
 	addCostOptionsFlags(cmd, &labelO.CostOptions)
+	display.AddAllocationDisplayOptionsFlags(cmd, &labelO.AllocationDisplayOptions)
 	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
@@ -90,7 +92,7 @@ func runCostLabel(ko *utilities.KubeOptions, no *CostOptionsLabel) error {
 	}
 
 	// Use allocations[0] because the query accumulates to a single result
-	display.WriteAllocationTable(ko.Out, aggregation, allocations[0], no.displayOptions, currencyCode, !no.isHistorical)
+	display.WriteAllocationTable(ko.Out, aggregation, allocations[0], no.AllocationDisplayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }

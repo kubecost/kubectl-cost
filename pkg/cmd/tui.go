@@ -22,7 +22,7 @@ import (
 
 type CostOptionsTUI struct {
 	query.QueryBackendOptions
-	displayOptions display.DisplayOptions
+	displayOptions display.AllocationDisplayOptions
 }
 
 func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
@@ -134,7 +134,7 @@ var windowOptions = []string{
 	"30d",
 }
 
-func populateDisplayOptionsList(displayOptionsList *tview.List, do *display.DisplayOptions, redrawTable func(), navigateTable func()) {
+func populateDisplayOptionsList(displayOptionsList *tview.List, do *display.AllocationDisplayOptions, redrawTable func(), navigateTable func()) {
 	showCPU := func() {
 		do.ShowCPUCost = !do.ShowCPUCost
 		redrawTable()
@@ -208,7 +208,7 @@ func buildWindowDropdown(windowIndex *int, requeryData func()) *tview.DropDown {
 	return windowDropdown
 }
 
-func runTUI(ko *utilities.KubeOptions, do display.DisplayOptions, qo query.QueryBackendOptions) error {
+func runTUI(ko *utilities.KubeOptions, do display.AllocationDisplayOptions, qo query.QueryBackendOptions) error {
 	app := tview.NewApplication()
 
 	table := tview.NewTable()

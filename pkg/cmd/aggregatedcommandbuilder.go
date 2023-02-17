@@ -15,9 +15,14 @@ import (
 	"github.com/opencost/opencost/pkg/log"
 )
 
+type AggregatedAllocationOptions struct {
+	CostOptions
+	display.AllocationDisplayOptions
+}
+
 func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStreams, commandName string, commandAliases []string, aggregation []string, enableNamespaceFilter bool) *cobra.Command {
 	kubeO := utilities.NewKubeOptions(streams)
-	costO := CostOptions{}
+	o := AggregatedAllocationOptions{}
 
 	cmd := &cobra.Command{
 		Use:     commandName,
@@ -31,33 +36,34 @@ func buildStandardAggregatedAllocationCommand(streams genericclioptions.IOStream
 				return err
 			}
 
-			if err := costO.Complete(kubeO.RestConfig); err != nil {
+			if err := o.CostOptions.Complete(kubeO.RestConfig); err != nil {
 				return fmt.Errorf("completing options: %s", err)
 			}
-			if err := costO.Validate(); err != nil {
+			if err := o.CostOptions.Validate(); err != nil {
 				return err
 			}
 
-			return runAggregatedAllocationCommand(kubeO, costO, aggregation)
+			return runAggregatedAllocationCommand(kubeO, o, aggregation)
 		},
 	}
 
 	// TODO: Replace entirely when we have generic filter language (v2)
 	if enableNamespaceFilter {
-		cmd.Flags().StringVarP(&costO.filterNamespace, "namespace", "n", "", "Limit results to only one namespace. Defaults to all namespaces.")
+		cmd.Flags().StringVarP(&o.CostOptions.filterNamespace, "namespace", "n", "", "Limit results to only one namespace. Defaults to all namespaces.")
 	}
 
-	addCostOptionsFlags(cmd, &costO)
+	addCostOptionsFlags(cmd, &o.CostOptions)
+	display.AddAllocationDisplayOptionsFlags(cmd, &o.AllocationDisplayOptions)
 	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
 
-func runAggregatedAllocationCommand(ko *utilities.KubeOptions, co CostOptions, aggregation []string) error {
+func runAggregatedAllocationCommand(ko *utilities.KubeOptions, o AggregatedAllocationOptions, aggregation []string) error {
 
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		Ctx:                 context.Background(),
-		QueryBackendOptions: co.QueryBackendOptions,
+		QueryBackendOptions: o.QueryBackendOptions,
 	})
 	if err != nil {
 		log.Debugf("failed to get currency code, displaying as empty string: %s", err)
@@ -67,18 +73,18 @@ func runAggregatedAllocationCommand(ko *utilities.KubeOptions, co CostOptions, a
 	allocations, err := query.QueryAllocation(query.AllocationParameters{
 		Ctx: context.Background(),
 		QueryParams: map[string]string{
-			"window":           co.window,
+			"window":           o.window,
 			"aggregate":        strings.Join(aggregation, ","),
 			"accumulate":       "true",
-			"filterNamespaces": co.filterNamespace,
+			"filterNamespaces": o.filterNamespace,
 		},
-		QueryBackendOptions: co.QueryBackendOptions,
+		QueryBackendOptions: o.QueryBackendOptions,
 	})
 	if err != nil {
 		return fmt.Errorf("failed to query allocation API: %s", err)
 	}
 
-	display.WriteAllocationTable(ko.Out, aggregation, allocations[0], co.displayOptions, currencyCode, !co.isHistorical)
+	display.WriteAllocationTable(ko.Out, aggregation, allocations[0], o.AllocationDisplayOptions, currencyCode, !o.isHistorical)
 
 	return nil
 }

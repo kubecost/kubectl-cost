@@ -36,10 +36,7 @@ func formatFloat(f float64) string {
 	return fmt.Sprintf("%.6f", f)
 }
 
-// With the addition of commands which query the assets API,
-// some of these don't apply to all commands. However, as they
-// are applied during the output, this shouldn't cause issues.
-type DisplayOptions struct {
+type AllocationDisplayOptions struct {
 	ShowCPUCost          bool
 	ShowMemoryCost       bool
 	ShowGPUCost          bool
@@ -48,12 +45,19 @@ type DisplayOptions struct {
 	ShowEfficiency       bool
 	ShowSharedCost       bool
 	ShowLoadBalancerCost bool
-	ShowAssetType        bool
 
 	ShowAll bool
 }
 
-func AddDisplayOptionsFlags(cmd *cobra.Command, options *DisplayOptions) {
+type AssetDisplayOptions struct {
+	ShowCPUCost    bool
+	ShowMemoryCost bool
+	ShowAssetType  bool
+
+	ShowAll bool
+}
+
+func AddAllocationDisplayOptionsFlags(cmd *cobra.Command, options *AllocationDisplayOptions) {
 	cmd.Flags().BoolVar(&options.ShowCPUCost, "show-cpu", false, "show data for CPU cost")
 	cmd.Flags().BoolVar(&options.ShowMemoryCost, "show-memory", false, "show data for memory cost")
 	cmd.Flags().BoolVar(&options.ShowGPUCost, "show-gpu", false, "show data for GPU cost")
@@ -62,18 +66,17 @@ func AddDisplayOptionsFlags(cmd *cobra.Command, options *DisplayOptions) {
 	cmd.Flags().BoolVar(&options.ShowSharedCost, "show-shared", false, "show shared cost data")
 	cmd.Flags().BoolVar(&options.ShowLoadBalancerCost, "show-lb", false, "show load balancer cost data")
 	cmd.Flags().BoolVar(&options.ShowEfficiency, "show-efficiency", true, "show efficiency of cost alongside CPU and memory cost")
+	cmd.Flags().BoolVarP(&options.ShowAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, label and pod")
+}
+
+func AddAssetDisplayOptionsFlags(cmd *cobra.Command, options *AssetDisplayOptions) {
+	cmd.Flags().BoolVar(&options.ShowCPUCost, "show-cpu", false, "show data for CPU cost")
+	cmd.Flags().BoolVar(&options.ShowMemoryCost, "show-memory", false, "show data for memory cost")
 	cmd.Flags().BoolVar(&options.ShowAssetType, "show-asset-type", false, "show type of assets displayed.")
 	cmd.Flags().BoolVarP(&options.ShowAll, "show-all-resources", "A", false, "Equivalent to --show-cpu --show-memory --show-gpu --show-pv --show-network --show-efficiency for namespace, deployment, controller, lable and pod OR --show-type --show-cpu --show-memory for node.")
 }
 
-func WriteAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts DisplayOptions, currencyCode string, projectToMonthlyRate bool) {
-	t := MakeAllocationTable(aggregation, allocations, opts, currencyCode, projectToMonthlyRate)
-
-	t.SetOutputMirror(out)
-	t.Render()
-}
-
-func (do *DisplayOptions) Complete() {
+func (do *AllocationDisplayOptions) Complete() {
 	if do.ShowAll {
 		do.ShowCPUCost = true
 		do.ShowMemoryCost = true
@@ -82,11 +85,25 @@ func (do *DisplayOptions) Complete() {
 		do.ShowNetworkCost = true
 		do.ShowSharedCost = true
 		do.ShowLoadBalancerCost = true
+	}
+}
+
+func (do *AssetDisplayOptions) Complete() {
+	if do.ShowAll {
+		do.ShowCPUCost = true
+		do.ShowMemoryCost = true
 		do.ShowAssetType = true
 	}
 }
 
-func MakeAllocationTable(aggregation []string, allocations map[string]kubecost.Allocation, opts DisplayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+func WriteAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts AllocationDisplayOptions, currencyCode string, projectToMonthlyRate bool) {
+	t := MakeAllocationTable(aggregation, allocations, opts, currencyCode, projectToMonthlyRate)
+
+	t.SetOutputMirror(out)
+	t.Render()
+}
+
+func MakeAllocationTable(aggregation []string, allocations map[string]kubecost.Allocation, opts AllocationDisplayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
@@ -390,14 +407,14 @@ func MakeAllocationTable(aggregation []string, allocations map[string]kubecost.A
 	return t
 }
 
-func WriteAssetTable(out io.Writer, assetType string, assets map[string]query.AssetNode, opts DisplayOptions, currencyCode string, projectToMonthlyRate bool) {
+func WriteAssetTable(out io.Writer, assetType string, assets map[string]query.AssetNode, opts AssetDisplayOptions, currencyCode string, projectToMonthlyRate bool) {
 	t := MakeAssetTable(assetType, assets, opts, currencyCode, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func MakeAssetTable(assetType string, assets map[string]query.AssetNode, opts DisplayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+func MakeAssetTable(assetType string, assets map[string]query.AssetNode, opts AssetDisplayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}
