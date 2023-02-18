@@ -123,6 +123,23 @@ func runCostPredict(ko *utilities.KubeOptions, no *PredictOptions) error {
 		}
 	}
 
+	// If the user doesn't provide a cluster ID, default to the "local" (the
+	// cluster ID of the API).
+	// TODO: Should we at some point distinguish between cluster ID of API and
+	// cluster ID of the actual configured cluster? Env var retrieval or
+	// something?
+	if len(no.clusterID) == 0 {
+		clusterID, err := query.QueryClusterID(query.ClusterInfoParameters{
+			Ctx:                 context.Background(),
+			QueryBackendOptions: no.QueryBackendOptions,
+		})
+		if err != nil {
+			return fmt.Errorf("acquiring cluster ID from service: %s", err)
+		}
+		no.clusterID = clusterID
+		log.Debugf("Cluster ID for query set to: %s", no.clusterID)
+	}
+
 	rows, err := query.QuerySpecCost(query.SpecCostParameters{
 		Ctx:                 context.Background(),
 		QueryBackendOptions: no.QueryBackendOptions,
@@ -130,7 +147,7 @@ func runCostPredict(ko *utilities.KubeOptions, no *PredictOptions) error {
 		QueryParams: map[string]string{
 			"noUsage":          fmt.Sprint(no.noUsage),
 			"window":           no.window,
-			"clusterID":        no.clusterID, // FIXME: Determine from local
+			"clusterID":        no.clusterID,
 			"defaultNamespace": ko.DefaultNamespace,
 		},
 	})
