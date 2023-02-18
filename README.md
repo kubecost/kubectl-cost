@@ -261,8 +261,7 @@ Kubecost/OpenCost APIs:
     --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
 
     --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
-    --predict-resource-cost-path string   URL path at which Resource Cost Prediction queries can be served from the configured service. (default "/model/prediction/resourcecost")
-    --predict-resource-cost-diff-path string   URL path at which Resource Cost Prediction diff queries can be served from the configured service. (default "/model/prediction/resourcecostdiff")
+    --predict-spec-cost-path string   URL path at which Prediction queries can be served from the configured service. (default "/model/prediction/speccost")
     --no-diff                                  Set true to not attempt a cost difference with a matching in-cluster workload, if one can be found.
 ```
 
