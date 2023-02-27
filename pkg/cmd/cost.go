@@ -3,8 +3,6 @@ package cmd
 import (
 	"fmt"
 
-	"github.com/kubecost/kubectl-cost/pkg/cmd/deprecated/oldpredict"
-
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
@@ -162,7 +160,6 @@ helm install \
 	cmd.AddCommand(newCmdCostNode(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
-	cmd.AddCommand(oldpredict.NewCmdOldPredict(streams))
 	cmd.AddCommand(NewCmdPredict(streams))
 
 	return cmd
