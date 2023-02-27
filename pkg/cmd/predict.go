@@ -30,7 +30,6 @@ type PredictOptions struct {
 	// The file containing the workload definition to be predicted.
 	filepath string
 
-	noDiff  bool
 	noUsage bool
 
 	query.QueryBackendOptions
@@ -89,6 +88,10 @@ func (predictO *PredictOptions) Validate() error {
 		return fmt.Errorf("validating query options: %s", err)
 	}
 
+	if err := predictO.PredictDisplayOptions.Validate(); err != nil {
+		return fmt.Errorf("validating display options: %s", err)
+	}
+
 	return nil
 }
 
@@ -103,6 +106,7 @@ func runCostPredict(ko *utilities.KubeOptions, no *PredictOptions) error {
 	var b []byte
 	var err error
 
+	// Filepath of - means read from stdin.
 	if no.filepath == "-" {
 		reader := bufio.NewReader(ko.In)
 

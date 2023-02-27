@@ -25,11 +25,20 @@ const (
 )
 
 type PredictDisplayOptions struct {
-	NoShowDiff bool
+	OnlyDiff  bool
+	OnlyAfter bool
 }
 
 func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOptions) {
-	cmd.Flags().BoolVar(&options.NoShowDiff, "no-diff", false, "Set true to not display cost difference information.")
+	cmd.Flags().BoolVar(&options.OnlyDiff, "only-diff", true, "Set true to only show the cost difference (cost \"impact\") instead of the overall cost plus diff.")
+	cmd.Flags().BoolVar(&options.OnlyAfter, "only-after", false, "Set true to only show the overall predicted cost of the workload.")
+}
+
+func (o *PredictDisplayOptions) Validate() error {
+	if o.OnlyDiff && o.OnlyAfter {
+		return fmt.Errorf("OnlyDiff and OnlyAfter cannot both be true.")
+	}
+	return nil
 }
 
 func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) {
@@ -41,51 +50,58 @@ func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyC
 func MakePredictionTable(rowData []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
 	t := table.NewWriter()
 
+	hideAfter := opts.OnlyDiff
+	hideDiff := opts.OnlyAfter
+
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
 			Name: PredictColWorkload,
 		},
 		{
 			Name:        PredictColMoCostCPU,
+			Hidden:      hideAfter,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostMemory,
+			Hidden:      hideAfter,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostGPU,
+			Hidden:      hideAfter,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostTotal,
+			Hidden:      hideAfter,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostDiffCPU,
-			Hidden:      opts.NoShowDiff,
+			Hidden:      hideDiff,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostDiffMemory,
-			Hidden:      opts.NoShowDiff,
+			Hidden:      hideDiff,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostDiffGPU,
-			Hidden:      opts.NoShowDiff,
+			Hidden:      hideDiff,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
 		{
 			Name:        PredictColMoCostDiffTotal,
-			Hidden:      opts.NoShowDiff,
+			Hidden:      hideDiff,
 			Align:       text.AlignRight,
 			AlignFooter: text.AlignRight,
 		},
