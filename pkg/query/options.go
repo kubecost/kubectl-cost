@@ -41,12 +41,6 @@ type QueryBackendOptions struct {
 	// A path which can serve Allocation queries, e.g. "/model/allocation"
 	AllocationPath string
 
-	// A path which can serve Resource Cost Prediction queries,
-	// e.g. "/prediction/resourcecost"
-	PredictResourceCostPath string
-	// A path which can serve Resource Cost Prediction queries with diff,
-	// e.g. "/prediction/resourcecostdiff"
-	PredictResourceCostDiffPath string
 	// A path which can serve Spec Cost Prediction queries.
 	// e.g. "/prediction/speccost"
 	PredictSpecCostPath string
@@ -97,9 +91,7 @@ func AddQueryBackendOptionsFlags(cmd *cobra.Command, options *QueryBackendOption
 	cmd.Flags().StringVar(&options.ServiceName, "service-name", "", "The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.")
 	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
 	cmd.Flags().StringVar(&options.AllocationPath, "allocation-path", "/model/allocation", "URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute'")
-	cmd.Flags().StringVar(&options.PredictResourceCostPath, "predict-resource-cost-path", "/model/prediction/resourcecost", "URL path at which Resource Cost Prediction queries can be served from the configured service.")
-	cmd.Flags().StringVar(&options.PredictResourceCostDiffPath, "predict-resource-cost-diff-path", "/model/prediction/resourcecostdiff", "URL path at which Resource Cost Prediction diff queries can be served from the configured service.")
-	cmd.Flags().StringVar(&options.PredictSpecCostPath, "predict-spec-cost-path", "/model/prediction/speccost", "URL path at which Prediction queries can be served from the configured service.")
+	cmd.Flags().StringVar(&options.PredictSpecCostPath, "predict-speccost-path", "/model/prediction/speccost", "URL path at which Prediction queries can be served from the configured service.")
 
 	//Check if environment variable KUBECTL_COST_USE_PROXY is set, it defaults to false
 	v := viper.New()
