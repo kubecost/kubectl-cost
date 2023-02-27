@@ -156,7 +156,7 @@ func runCostPredict(ko *utilities.KubeOptions, no *PredictOptions) error {
 		},
 	})
 	if err != nil {
-		return fmt.Errorf("Failed querying the spec cost API. This API requires a version of Kubecost >= 1.101, which may be why this query failed. Error: %s", err)
+		return fmt.Errorf("Failed querying the speccost API. This API requires a version of Kubecost >= 1.101, which may be why this query failed. If running Kubecost v1.100, you can downgrade kubectl cost to v0.4 for old-style prediction. Error: %s", err)
 	}
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		Ctx:                 context.Background(),
