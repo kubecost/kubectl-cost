@@ -20,20 +20,12 @@ const (
 	ColCostPerUnit    = "cost per unit"
 )
 
-type PredictDisplayOptions struct {
-	OnlyDiff  bool
-	OnlyAfter bool
-}
+type PredictDisplayOptions struct{}
 
 func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOptions) {
-	cmd.Flags().BoolVar(&options.OnlyDiff, "only-diff", true, "Set true to only show the cost difference (cost \"impact\") instead of the overall cost plus diff.")
-	cmd.Flags().BoolVar(&options.OnlyAfter, "only-after", false, "Set true to only show the overall predicted cost of the workload.")
 }
 
 func (o *PredictDisplayOptions) Validate() error {
-	if o.OnlyDiff && o.OnlyAfter {
-		return fmt.Errorf("OnlyDiff and OnlyAfter cannot both be true.")
-	}
 	return nil
 }
 
