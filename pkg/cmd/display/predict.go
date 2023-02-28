@@ -47,6 +47,7 @@ func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyC
 
 func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
 	t := table.NewWriter()
+	t.SetStyle(table.StyleLight)
 	t.SetTitle("%s/%s/%s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
 
 	t.SetColumnConfigs([]table.ColumnConfig{
