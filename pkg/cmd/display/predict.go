@@ -121,8 +121,6 @@ func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts 
 		ColMoDiffCost,
 	})
 
-	// FIXME: Handle if speccost response doesn't have resource info
-
 	cpuUnits := "CPU cores"
 	avgCPUInUnits := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
 	if avgCPUInUnits < 1 {
