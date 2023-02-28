@@ -16,10 +16,9 @@ type CostPrediction struct {
 	RAMMonthlyRate   float64 `json:"ramMonthlyRate"`
 	GPUMonthlyRate   float64 `json:"gpuMonthlyRate"`
 
-	// Omitempty because v1.101 of Kubecost will not have these fields.
-	MonthlyCPUCoreHours float64 `json:"monthlyCPUCoreHours,omitempty"`
-	MonthlyRAMByteHours float64 `json:"monthlyRAMByteHours,omitempty"`
-	MonthlyGPUHours     float64 `json:"monthlyGPUHours,omitempty"`
+	MonthlyCPUCoreHours float64 `json:"monthlyCPUCoreHours"`
+	MonthlyRAMByteHours float64 `json:"monthlyRAMByteHours"`
+	MonthlyGPUHours     float64 `json:"monthlyGPUHours"`
 }
 
 type SpecCostDiff struct {
