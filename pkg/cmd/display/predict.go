@@ -101,5 +101,17 @@ func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts 
 	}
 	t.AppendRow(ramRow)
 
+	if !(specData.CostBefore.GPUMonthlyRate == 0 && specData.CostAfter.GPUMonthlyRate == 0) {
+		avgGPUs := specData.CostChange.MonthlyGPUHours / timeutil.HoursPerMonth
+		costPerGPU := specData.CostChange.GPUMonthlyRate / avgGPUs
+		gpuRow := table.Row{
+			"GPUs",
+			fmt.Sprintf("%.2f", avgGPUs),
+			fmt.Sprintf("%.2f %s", costPerGPU, currencyCode),
+			fmt.Sprintf("%.2f %s", specData.CostChange.GPUMonthlyRate, currencyCode),
+		}
+		t.AppendRow(gpuRow)
+	}
+
 	return t
 }
