@@ -38,11 +38,14 @@ func (o *PredictDisplayOptions) Validate() error {
 }
 
 func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) {
+	totalCostImpact := 0.0
 	for _, specData := range rowData {
+		totalCostImpact += specData.CostChange.TotalMonthlyRate
 		t := MakePredictionTable(specData, currencyCode, opts)
 		t.SetOutputMirror(out)
 		t.Render()
 	}
+	out.Write([]byte(fmt.Sprintf("Total cost impact: %.2f %s\n", totalCostImpact, currencyCode)))
 }
 
 func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
