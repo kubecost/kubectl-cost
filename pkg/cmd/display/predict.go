@@ -110,6 +110,15 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		{
 			Name:  ColMoDiffResource,
 			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmtResourceFloat(f)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 		{
 			Name:  ColResourceUnit,
@@ -118,10 +127,37 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		{
 			Name:  ColCostPerUnit,
 			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmt.Sprintf("%s %s", fmtResourceCostFloat(f), currencyCode)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 		{
 			Name:  ColMoDiffCost,
 			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmt.Sprintf("%s %s", fmtOverallCostFloat(f), currencyCode)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
+			TransformerFooter: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmt.Sprintf("%s %s", fmtOverallCostFloat(f), currencyCode)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 	})
 
@@ -156,10 +192,10 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		costPerUnit := specData.CostChange.CPUMonthlyRate / avgCPUInUnits
 		cpuRow := table.Row{
 			workloadName,
-			fmtResourceFloat(avgCPUInUnits),
+			avgCPUInUnits,
 			cpuUnits,
-			fmt.Sprintf("%s %s", fmtResourceCostFloat(costPerUnit), currencyCode),
-			fmt.Sprintf("%s %s", fmtOverallCostFloat(specData.CostChange.CPUMonthlyRate), currencyCode),
+			costPerUnit,
+			specData.CostChange.CPUMonthlyRate,
 		}
 		t.AppendRow(cpuRow)
 
@@ -174,10 +210,10 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		costPerUnit = specData.CostChange.RAMMonthlyRate / avgRAMInUnits
 		ramRow := table.Row{
 			workloadName,
-			fmtResourceFloat(avgRAMInUnits),
+			avgRAMInUnits,
 			ramUnits,
-			fmt.Sprintf("%s %s", fmtResourceCostFloat(costPerUnit), currencyCode),
-			fmt.Sprintf("%s %s", fmtOverallCostFloat(specData.CostChange.RAMMonthlyRate), currencyCode),
+			costPerUnit,
+			specData.CostChange.RAMMonthlyRate,
 		}
 		t.AppendRow(ramRow)
 
@@ -186,10 +222,10 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			costPerGPU := specData.CostChange.GPUMonthlyRate / avgGPUs
 			gpuRow := table.Row{
 				workloadName,
-				fmtResourceFloat(avgGPUs),
+				avgGPUs,
 				"GPUs",
-				fmt.Sprintf("%s %s", fmtResourceCostFloat(costPerGPU), currencyCode),
-				fmt.Sprintf("%s %s", fmtOverallCostFloat(specData.CostChange.GPUMonthlyRate), currencyCode),
+				costPerGPU,
+				specData.CostChange.GPUMonthlyRate,
 			}
 			t.AppendRow(gpuRow)
 		}
@@ -201,7 +237,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		"",
 		"",
 		"",
-		fmt.Sprintf("%s %s", fmtOverallCostFloat(totalCostImpact), currencyCode),
+		totalCostImpact,
 	})
 
 	return t
