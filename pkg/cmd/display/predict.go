@@ -31,40 +31,33 @@ func (o *PredictDisplayOptions) Validate() error {
 }
 
 func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) {
-	totalCostImpact := 0.0
-	for _, specData := range rowData {
-		totalCostImpact += specData.CostChange.TotalMonthlyRate
-		t := MakePredictionTable(specData, currencyCode, opts)
-		t.SetOutputMirror(out)
-		t.Render()
-		out.Write([]byte("\n"))
-	}
-
-	out.Write([]byte(
-		text.Bold.Sprint(
-			fmt.Sprintf("Total monthly cost change: %.2f %s\n", totalCostImpact, currencyCode),
-		),
-	))
+	t := MakePredictionTable(rowData, currencyCode, opts)
+	t.SetOutputMirror(out)
+	t.Render()
 }
 
 // fmtResourceFloat formats with a precision of 3 and then trims trailing 0s in
 // the decimal places.
 func fmtResourceFloat(x float64) string {
 	s := fmt.Sprintf("%.3f", x)
+	if x > 0 {
+		s = fmt.Sprintf("+%s", s)
+	}
 
 	// If formatted float ends in .000, remove
 	s = strings.TrimRight(s, "0")
 	s = strings.TrimSuffix(s, ".")
+
 	return s
 }
 
-// fmtCostFloat starts by formatting the given float at precision 2. If the
-// precision is insufficient for showing useful information, the precision is
-// increased.
+// fmtResourceCostFloat starts by formatting the given float at precision 2. If
+// the precision is insufficient for showing useful information, the precision
+// is increased.
 //
 // The bar for "useful information" is x < 1 (so we only have decimals) and all
 // decimal places except the final place are '0'.
-func fmtCostFloat(x float64) string {
+func fmtResourceCostFloat(x float64) string {
 	precision := 2
 	precisionToFmt := func(precision int) string {
 		return fmt.Sprintf("%%.%df", precision)
@@ -83,7 +76,15 @@ func fmtCostFloat(x float64) string {
 	return s
 }
 
-func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
+func fmtOverallCostFloat(x float64) string {
+	s := fmt.Sprintf("%.2f", x)
+	if x > 0 {
+		s = fmt.Sprintf("+%s", s)
+	}
+	return s
+}
+
+func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
 	t := table.NewWriter()
 
 	// start with this style, then we'll modify
@@ -93,9 +94,19 @@ func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts 
 	style.Options.SeparateHeader = true
 	style.Title.Colors = append(style.Title.Colors, text.Bold)
 	t.SetStyle(style)
-	t.SetTitle("%s/%s/%s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
+	// t.SetTitle("%s/%s/%s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
 
 	t.SetColumnConfigs([]table.ColumnConfig{
+		{
+			Name:      "Workload",
+			Align:     text.AlignLeft,
+			AutoMerge: true,
+
+			// When https://github.com/jedib0t/go-pretty/issues/261 is fixed, we
+			// can turn on WidthMax and wrapping to have a less-wide output
+			// WidthMax:         30,
+			// WidthMaxEnforcer: text.WrapSoft,
+		},
 		{
 			Name:  ColMoDiffResource,
 			Align: text.AlignRight,
@@ -115,55 +126,83 @@ func MakePredictionTable(specData query.SpecCostDiff, currencyCode string, opts 
 	})
 
 	t.AppendHeader(table.Row{
+		"Workload",
 		ColMoDiffResource,
 		ColResourceUnit,
 		ColCostPerUnit,
 		ColMoDiffCost,
 	})
 
-	cpuUnits := "CPU cores"
-	avgCPUInUnits := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
-	if avgCPUInUnits < 1 {
-		cpuUnits = "CPU millicores"
-		avgCPUInUnits = specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth * 1000
-	}
-	costPerUnit := specData.CostChange.CPUMonthlyRate / avgCPUInUnits
-	cpuRow := table.Row{
-		fmtResourceFloat(avgCPUInUnits),
-		cpuUnits,
-		fmt.Sprintf("%s %s", fmtCostFloat(costPerUnit), currencyCode),
-		fmt.Sprintf("%.2f %s", specData.CostChange.CPUMonthlyRate, currencyCode),
-	}
-	t.AppendRow(cpuRow)
+	totalCostImpact := 0.0
+	for _, specData := range specDiffs {
+		totalCostImpact += specData.CostChange.TotalMonthlyRate
 
-	ramUnits := "RAM GiB"
-	ramUnitDivisor := 1024 * 1024 * 1024.0
-	avgRAMInUnits := specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
-	if avgRAMInUnits < 1 {
-		ramUnits = "RAM MiB"
-		ramUnitDivisor = 1024 * 1024.0
-		avgRAMInUnits = specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
-	}
-	costPerUnit = specData.CostChange.RAMMonthlyRate / avgRAMInUnits
-	ramRow := table.Row{
-		fmtResourceFloat(avgRAMInUnits),
-		ramUnits,
-		fmt.Sprintf("%s %s", fmtCostFloat(costPerUnit), currencyCode),
-		fmt.Sprintf("%.2f %s", specData.CostChange.RAMMonthlyRate, currencyCode),
-	}
-	t.AppendRow(ramRow)
+		workloadName := fmt.Sprintf("%s %s %s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
+		// t.AppendRow(table.Row{
+		// 	workloadName,
+		// 	workloadName,
+		// 	workloadName,
+		// 	workloadName,
+		// }, table.RowConfig{
+		// 	AutoMerge: true,
+		// })
 
-	if !(specData.CostBefore.GPUMonthlyRate == 0 && specData.CostAfter.GPUMonthlyRate == 0) {
-		avgGPUs := specData.CostChange.MonthlyGPUHours / timeutil.HoursPerMonth
-		costPerGPU := specData.CostChange.GPUMonthlyRate / avgGPUs
-		gpuRow := table.Row{
-			fmtResourceFloat(avgGPUs),
-			"GPUs",
-			fmt.Sprintf("%s %s", fmtCostFloat(costPerGPU), currencyCode),
-			fmt.Sprintf("%.2f %s", specData.CostChange.GPUMonthlyRate, currencyCode),
+		cpuUnits := "CPU cores"
+		avgCPUInUnits := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
+		if avgCPUInUnits < 1 {
+			cpuUnits = "CPU millicores"
+			avgCPUInUnits = specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth * 1000
 		}
-		t.AppendRow(gpuRow)
+		costPerUnit := specData.CostChange.CPUMonthlyRate / avgCPUInUnits
+		cpuRow := table.Row{
+			workloadName,
+			fmtResourceFloat(avgCPUInUnits),
+			cpuUnits,
+			fmt.Sprintf("%s %s", fmtResourceCostFloat(costPerUnit), currencyCode),
+			fmt.Sprintf("%s %s", fmtOverallCostFloat(specData.CostChange.CPUMonthlyRate), currencyCode),
+		}
+		t.AppendRow(cpuRow)
+
+		ramUnits := "RAM GiB"
+		ramUnitDivisor := 1024 * 1024 * 1024.0
+		avgRAMInUnits := specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+		if avgRAMInUnits < 1 {
+			ramUnits = "RAM MiB"
+			ramUnitDivisor = 1024 * 1024.0
+			avgRAMInUnits = specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+		}
+		costPerUnit = specData.CostChange.RAMMonthlyRate / avgRAMInUnits
+		ramRow := table.Row{
+			workloadName,
+			fmtResourceFloat(avgRAMInUnits),
+			ramUnits,
+			fmt.Sprintf("%s %s", fmtResourceCostFloat(costPerUnit), currencyCode),
+			fmt.Sprintf("%s %s", fmtOverallCostFloat(specData.CostChange.RAMMonthlyRate), currencyCode),
+		}
+		t.AppendRow(ramRow)
+
+		if !(specData.CostBefore.GPUMonthlyRate == 0 && specData.CostAfter.GPUMonthlyRate == 0) {
+			avgGPUs := specData.CostChange.MonthlyGPUHours / timeutil.HoursPerMonth
+			costPerGPU := specData.CostChange.GPUMonthlyRate / avgGPUs
+			gpuRow := table.Row{
+				workloadName,
+				fmtResourceFloat(avgGPUs),
+				"GPUs",
+				fmt.Sprintf("%s %s", fmtResourceCostFloat(costPerGPU), currencyCode),
+				fmt.Sprintf("%s %s", fmtOverallCostFloat(specData.CostChange.GPUMonthlyRate), currencyCode),
+			}
+			t.AppendRow(gpuRow)
+		}
+		t.AppendSeparator()
 	}
+
+	t.AppendFooter(table.Row{
+		"Total monthly cost change",
+		"",
+		"",
+		"",
+		fmt.Sprintf("%s %s", fmtOverallCostFloat(totalCostImpact), currencyCode),
+	})
 
 	return t
 }
