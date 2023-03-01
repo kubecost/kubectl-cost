@@ -5,9 +5,13 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/opencost/opencost/pkg/log"
 
 	"k8s.io/client-go/rest"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
 // QueryBackendOptions holds common options for managing the query backend used
@@ -37,12 +41,9 @@ type QueryBackendOptions struct {
 	// A path which can serve Allocation queries, e.g. "/model/allocation"
 	AllocationPath string
 
-	// A path which can serve Resource Cost Prediction queries,
-	// e.g. "/prediction/resourcecost"
-	PredictResourceCostPath string
-	// A path which can serve Resource Cost Prediction queries with diff,
-	// e.g. "/prediction/resourcecostdiff"
-	PredictResourceCostDiffPath string
+	// A path which can serve Spec Cost Prediction queries.
+	// e.g. "/prediction/speccost"
+	PredictSpecCostPath string
 
 	restConfig *rest.Config
 	pfQuerier  *PortForwardQuerier
@@ -80,4 +81,21 @@ func (o *QueryBackendOptions) Validate() error {
 		return fmt.Errorf("namespace for Kubecost cannot be empty")
 	}
 	return nil
+}
+
+func AddQueryBackendOptionsFlags(cmd *cobra.Command, options *QueryBackendOptions) {
+	cmd.Flags().StringVarP(&options.HelmReleaseName, "release-name", "r", "kubecost", "The name of the Helm release, used to template service names if they are unset. For example, if Kubecost is installed with 'helm install kubecost2 kubecost/cost-analyzer', then this should be set to 'kubecost2'.")
+	cmd.Flags().StringVarP(&options.KubecostNamespace, "kubecost-namespace", "N", "", "The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.")
+
+	cmd.Flags().IntVar(&options.ServicePort, "service-port", 9090, "The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003.")
+	cmd.Flags().StringVar(&options.ServiceName, "service-name", "", "The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.")
+	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
+	cmd.Flags().StringVar(&options.AllocationPath, "allocation-path", "/model/allocation", "URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute'")
+	cmd.Flags().StringVar(&options.PredictSpecCostPath, "predict-speccost-path", "/model/prediction/speccost", "URL path at which Prediction queries can be served from the configured service.")
+
+	//Check if environment variable KUBECTL_COST_USE_PROXY is set, it defaults to false
+	v := viper.New()
+	v.SetEnvPrefix(utilities.EnvPrefix)
+	v.AutomaticEnv()
+	utilities.BindAFlagToViperEnv(cmd, v, "use-proxy")
 }

@@ -5,7 +5,6 @@ import (
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
-	"k8s.io/client-go/rest"
 
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -78,31 +77,6 @@ var (
 
 	errNoContext = fmt.Errorf("no context is currently set, use %q to select a new one", "kubectl config use-context <context>")
 )
-
-// KubeOptions provides information required to communicate
-// with the Kubernetes API
-type KubeOptions struct {
-	configFlags *genericclioptions.ConfigFlags
-
-	restConfig *rest.Config
-	args       []string
-
-	// Namespace should be the currently-configured defaultNamespace of the client.
-	// This allows e.g. predict to fill in the defaultNamespace if one is not provided
-	// in the workload spec.
-	defaultNamespace string
-
-	genericclioptions.IOStreams
-}
-
-// NewCommonCostOptions creates the default set of cost options
-func NewKubeOptions(streams genericclioptions.IOStreams) *KubeOptions {
-	return &KubeOptions{
-		configFlags: genericclioptions.NewConfigFlags(true),
-
-		IOStreams: streams,
-	}
-}
 
 // NewCmdCost provides a cobra command that acts as a parent command
 // for all subcommands. It provides only basic usage information. See
@@ -186,32 +160,7 @@ helm install \
 	cmd.AddCommand(newCmdCostNode(streams))
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
-	cmd.AddCommand(newCmdPredict(streams))
+	cmd.AddCommand(NewCmdPredict(streams))
 
 	return cmd
-}
-
-// Complete sets all information required for getting cost information
-func (o *KubeOptions) Complete(cmd *cobra.Command, args []string) error {
-	o.args = args
-
-	var err error
-
-	o.restConfig, err = o.configFlags.ToRESTConfig()
-	if err != nil {
-		return fmt.Errorf("converting to REST config: %s", err)
-	}
-
-	o.defaultNamespace, _, err = o.configFlags.ToRawKubeConfigLoader().Namespace()
-	if err != nil {
-		return fmt.Errorf("retrieving default namespace: %s", err)
-	}
-
-	return nil
-}
-
-// Validate ensures that all required arguments and flag values are provided
-func (o *KubeOptions) Validate() error {
-
-	return nil
 }

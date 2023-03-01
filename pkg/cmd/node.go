@@ -8,6 +8,8 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/kubecost/kubectl-cost/pkg/cmd/display"
+	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/opencost/opencost/pkg/log"
 )
@@ -16,10 +18,11 @@ import (
 // options specific to node queries.
 type CostOptionsNode struct {
 	CostOptions
+	display.AssetDisplayOptions
 }
 
 func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
-	kubeO := NewKubeOptions(streams)
+	kubeO := utilities.NewKubeOptions(streams)
 	assetsO := &CostOptionsNode{}
 
 	cmd := &cobra.Command{
@@ -34,7 +37,7 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := assetsO.CostOptions.Complete(kubeO.restConfig); err != nil {
+			if err := assetsO.CostOptions.Complete(kubeO.RestConfig); err != nil {
 				return fmt.Errorf("completing options: %s", err)
 			}
 
@@ -47,12 +50,13 @@ func newCmdCostNode(streams genericclioptions.IOStreams) *cobra.Command {
 	}
 
 	addCostOptionsFlags(cmd, &assetsO.CostOptions)
-	addKubeOptionsFlags(cmd, kubeO)
+	display.AddAssetDisplayOptionsFlags(cmd, &assetsO.AssetDisplayOptions)
+	utilities.AddKubeOptionsFlags(cmd, kubeO)
 
 	return cmd
 }
 
-func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
+func runCostNode(ko *utilities.KubeOptions, no *CostOptionsNode) error {
 	currencyCode, err := query.QueryCurrencyCode(query.CurrencyCodeParameters{
 		Ctx:                 context.Background(),
 		QueryBackendOptions: no.QueryBackendOptions,
@@ -74,7 +78,7 @@ func runCostNode(ko *KubeOptions, no *CostOptionsNode) error {
 	}
 
 	// Use assets[0] because the query accumulates to a single result
-	writeAssetTable(ko.Out, "Node", assets[0], no.displayOptions, currencyCode, !no.isHistorical)
+	display.WriteAssetTable(ko.Out, "Node", assets[0], no.AssetDisplayOptions, currencyCode, !no.isHistorical)
 
 	return nil
 }

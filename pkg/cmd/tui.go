@@ -11,6 +11,8 @@ import (
 	"k8s.io/cli-runtime/pkg/genericclioptions"
 
 	"github.com/gdamore/tcell/v2"
+	"github.com/kubecost/kubectl-cost/pkg/cmd/display"
+	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 	"github.com/opencost/opencost/pkg/kubecost"
 	"github.com/opencost/opencost/pkg/log"
@@ -20,11 +22,11 @@ import (
 
 type CostOptionsTUI struct {
 	query.QueryBackendOptions
-	displayOptions
+	displayOptions display.AllocationDisplayOptions
 }
 
 func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
-	kubeO := NewKubeOptions(streams)
+	kubeO := utilities.NewKubeOptions(streams)
 	tuiO := &CostOptionsTUI{}
 
 	cmd := &cobra.Command{
@@ -38,7 +40,7 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 				return err
 			}
 
-			if err := tuiO.QueryBackendOptions.Complete(kubeO.restConfig); err != nil {
+			if err := tuiO.QueryBackendOptions.Complete(kubeO.RestConfig); err != nil {
 				return fmt.Errorf("completing query options: %s", err)
 			}
 			if err := tuiO.QueryBackendOptions.Validate(); err != nil {
@@ -49,8 +51,8 @@ func newCmdTUI(streams genericclioptions.IOStreams) *cobra.Command {
 		},
 	}
 
-	addKubeOptionsFlags(cmd, kubeO)
-	addQueryBackendOptionsFlags(cmd, &tuiO.QueryBackendOptions)
+	utilities.AddKubeOptionsFlags(cmd, kubeO)
+	query.AddQueryBackendOptionsFlags(cmd, &tuiO.QueryBackendOptions)
 
 	return cmd
 }
@@ -62,6 +64,42 @@ type aggregationTableOptions struct {
 	aggregation    string
 	headers        []string
 	titleExtractor func(string) ([]string, error)
+}
+
+func deploymentTitleExtractor(aggregationName string) ([]string, error) {
+	sp := strings.Split(aggregationName, "/")
+
+	if len(sp) != 2 {
+		return nil, fmt.Errorf("deployment title should have 2 fields")
+	}
+
+	return sp, nil
+}
+
+// see the results of /model/aggregatedCostModel?window=1d&aggregation=controller
+
+func controllerTitleExtractor(aggregationName string) ([]string, error) {
+	sp := strings.Split(aggregationName, "/")
+
+	if len(sp) != 2 {
+		return nil, fmt.Errorf("controller title should have 2 fields")
+	}
+
+	return sp, nil
+}
+
+func podTitleExtractor(aggregationName string) ([]string, error) {
+	sp := strings.Split(aggregationName, "/")
+
+	if len(sp) != 2 {
+		return nil, fmt.Errorf("pod title should have 2 fields")
+	}
+
+	return sp, nil
+}
+
+func noopTitleExtractor(aggregationName string) ([]string, error) {
+	return []string{aggregationName}, nil
 }
 
 // this is the set of options that the TUI builds the aggregation
@@ -96,34 +134,34 @@ var windowOptions = []string{
 	"30d",
 }
 
-func populateDisplayOptionsList(displayOptionsList *tview.List, do *displayOptions, redrawTable func(), navigateTable func()) {
+func populateDisplayOptionsList(displayOptionsList *tview.List, do *display.AllocationDisplayOptions, redrawTable func(), navigateTable func()) {
 	showCPU := func() {
-		do.showCPUCost = !do.showCPUCost
+		do.ShowCPUCost = !do.ShowCPUCost
 		redrawTable()
 	}
 
 	showMemory := func() {
-		do.showMemoryCost = !do.showMemoryCost
+		do.ShowMemoryCost = !do.ShowMemoryCost
 		redrawTable()
 	}
 
 	showPV := func() {
-		do.showPVCost = !do.showPVCost
+		do.ShowPVCost = !do.ShowPVCost
 		redrawTable()
 	}
 
 	showGPU := func() {
-		do.showGPUCost = !do.showGPUCost
+		do.ShowGPUCost = !do.ShowGPUCost
 		redrawTable()
 	}
 
 	showNetwork := func() {
-		do.showNetworkCost = !do.showNetworkCost
+		do.ShowNetworkCost = !do.ShowNetworkCost
 		redrawTable()
 	}
 
 	showShared := func() {
-		do.showSharedCost = !do.showSharedCost
+		do.ShowSharedCost = !do.ShowSharedCost
 		redrawTable()
 	}
 
@@ -170,7 +208,7 @@ func buildWindowDropdown(windowIndex *int, requeryData func()) *tview.DropDown {
 	return windowDropdown
 }
 
-func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) error {
+func runTUI(ko *utilities.KubeOptions, do display.AllocationDisplayOptions, qo query.QueryBackendOptions) error {
 	app := tview.NewApplication()
 
 	table := tview.NewTable()
@@ -204,7 +242,7 @@ func runTUI(ko *KubeOptions, do displayOptions, qo query.QueryBackendOptions) er
 		// table here. This TUI library needs us to build tables from a 2D array.
 		// The CSV-rendered (string) go-pretty table, nicely sorted and everything,
 		// is parsed into a 2D array and then the TUI table is built from that.
-		tWriter := makeAllocationTable(aggregation, allocations, do, currencyCode, true)
+		tWriter := display.MakeAllocationTable(aggregation, allocations, do, currencyCode, true)
 		serializedTable := tWriter.RenderCSV()
 
 		err := setTableFromCSV(table, serializedTable)

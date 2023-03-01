@@ -15,11 +15,11 @@ of any Kubernetes workload.
 now with `kubectl cost predict -f your-deployment.yaml`:
 
 ```
-+-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
-| WORKLOAD                            | CPU | MEM | GPU | CPU/MO     | MEM/MO    | GPU/MO   | Δ CPU/MO  | Δ MEM/MO  | TOTAL/MO   |
-+-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
-| default/Deployment/test1-deployment | 9   | 6Gi | 0   | 207.68 USD | 18.56 USD | 0.00 USD | 38.30 USD | 11.51 USD | 226.24 USD |
-+-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
++-------------------------------------+------------+-----------+----------+------------+
+| WORKLOAD                            | Δ CPU/MO   | Δ MEM/MO  | Δ GPU/MO | Δ TOTAL/MO |
++-------------------------------------+------------+-----------+----------+------------+
+| default/deployment/test1-deployment | 209.47 USD | 18.72 USD | 0.00 USD | 228.19 USD |
++-------------------------------------+------------+-----------+----------+------------+
 ```
 
 
@@ -145,11 +145,11 @@ echo "$DEF" | kubectl cost predict -f -
 ```
 Example output:
 ```
-+-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
-| WORKLOAD                            | CPU | MEM | GPU | CPU/MO     | MEM/MO    | GPU/MO   | Δ CPU/MO  | Δ MEM/MO  | TOTAL/MO   |
-+-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
-| default/Deployment/nginx-deployment | 9   | 6Gi | 0   | 207.68 USD | 18.56 USD | 0.00 USD | 38.30 USD | 11.51 USD | 226.24 USD |
-+-------------------------------------+-----+-----+-----+------------+-----------+----------+-----------+-----------+------------+
++---------------------------------------+------------+-----------+----------+------------+
+| WORKLOAD                              | Δ CPU/MO   | Δ MEM/MO  | Δ GPU/MO | Δ TOTAL/MO |
++---------------------------------------+------------+-----------+----------+------------+
+| michaelkc/deployment/nginx-deployment | 209.47 USD | 18.72 USD | 0.00 USD | 228.18 USD |
++---------------------------------------+------------+-----------+----------+------------+
 ```
 
 Show how much each namespace cost over the past 5 days
@@ -253,17 +253,19 @@ subcommand has its own set of flags for adjusting query behavior and output.
 There are several flags that modify the behavior of queries to the backing
 Kubecost/OpenCost APIs:
 ```
-    -r, --release-name string                 The name of the Helm release, used to template service names if they are unset. For example, if Kubecost is installed with 'helm install kubecost2 kubecost/cost-analyzer', then this should be set to 'kubecost2'. (default "kubecost")
-    --service-name string                 The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.
-    --service-port int               The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003. (default 9090)
-    -N, --kubecost-namespace string           The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.
+    -r, --release-name string         The name of the Helm release, used to template service names if they are unset. For example, if Kubecost is installed with 'helm install kubecost2 kubecost/cost-analyzer', then this should be set to 'kubecost2'. (default "kubecost")
+    --service-name string             The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.
+    --service-port int                The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003. (default 9090)
+    -N, --kubecost-namespace string   The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.
 
-    --use-proxy                   Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
+    --use-proxy                       Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
 
-    --allocation-path string         URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
-    --predict-resource-cost-path string   URL path at which Resource Cost Prediction queries can be served from the configured service. (default "/model/prediction/resourcecost")
-    --predict-resource-cost-diff-path string   URL path at which Resource Cost Prediction diff queries can be served from the configured service. (default "/model/prediction/resourcecostdiff")
-    --no-diff                                  Set true to not attempt a cost difference with a matching in-cluster workload, if one can be found.
+    --allocation-path string          URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
+
+    --predict-speccost-path string    URL path at which Prediction queries can be served from the configured service. (default "/model/prediction/speccost")
+    --no-usage                        Set true ignore historical usage data (if any exists) when performing cost prediction.
+    --only-after                      Set true to only show the overall predicted cost of the workload.
+    --only-diff                       Set true to only show the cost difference (cost "impact") instead of the overall cost plus diff. (default true)
 ```
 
 

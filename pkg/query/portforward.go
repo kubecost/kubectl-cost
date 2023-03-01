@@ -181,6 +181,54 @@ func (pfq *PortForwardQuerier) queryGet(ctx context.Context, path string, params
 	return body, nil
 }
 
+func (pfq *PortForwardQuerier) queryPost(ctx context.Context, path string, params map[string]string, headers map[string]string, body []byte) ([]byte, error) {
+	if pfq.baseQueryURL == "" {
+		return nil, fmt.Errorf("base port-forward URL must be non-empty")
+	}
+
+	fullPath, err := url.JoinPath(pfq.baseQueryURL, path)
+	if err != nil {
+		return nil, fmt.Errorf("joining paths (%s, %s): %s", pfq.baseQueryURL, path, err)
+	}
+
+	req, err := http.NewRequestWithContext(
+		ctx,
+		"POST",
+		fullPath,
+		bytes.NewReader(body),
+	)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create base query request: %s", err)
+	}
+	q := req.URL.Query()
+	for key, val := range params {
+		q.Add(key, val)
+	}
+	req.URL.RawQuery = q.Encode()
+
+	for k, v := range headers {
+		req.Header.Add(k, v)
+	}
+
+	log.Debugf("Executing POST to: %s", req.URL.String())
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("failed to POST %s: %s", fullPath, err)
+	}
+
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read %s response body: %s", fullPath, err)
+	}
+	if resp.StatusCode != 200 {
+		return nil, fmt.Errorf("received non-200 status code %d and data: %s", resp.StatusCode, respBody)
+	}
+
+	return respBody, nil
+}
+
 // reference: https://stackoverflow.com/questions/41545123/how-to-get-pods-under-the-service-with-client-go-the-client-library-of-kubernete
 func getServicePods(restConfig *rest.Config, namespace, serviceName string, ctx context.Context) (*corev1.PodList, error) {
 	clientset, err := kubernetes.NewForConfig(restConfig)
