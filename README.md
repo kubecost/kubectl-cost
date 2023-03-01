@@ -121,6 +121,7 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: nginx-deployment
+  namespace: default
   labels:
     app: nginx
 spec:
@@ -147,12 +148,12 @@ Example output:
 ```
  OBJECT                      Δ QTY  RESOURCE UNIT  COST PER UNIT    Δ COST/MO  % CHANGE 
 ────────────────────────────────────────────────────────────────────────────────────────
- michaelkc deployment           +9  CPU cores          23.27 USD  +209.47 USD           
+ default deployment             +9  CPU cores          23.27 USD  +209.47 USD           
  nginx-deployment                                                                       
                                 +6  RAM GiB             3.12 USD   +18.72 USD           
                                                                                         
 ────────────────────────────────────────────────────────────────────────────────────────
- TOTAL MONTHLY COST CHANGE                                        +228.18 USD  
+ TOTAL MONTHLY COST CHANGE                                        +228.18 USD           
 ```
 
 Show how much each namespace cost over the past 5 days
