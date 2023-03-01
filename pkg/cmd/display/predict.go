@@ -16,8 +16,8 @@ import (
 
 const (
 	ColObject         = "object"
-	ColResourceUnit   = "resource"
-	ColMoDiffResource = "Δ"
+	ColResourceUnit   = "resource unit"
+	ColMoDiffResource = "Δ qty"
 	ColMoDiffCost     = "Δ cost/mo"
 	ColCostPerUnit    = "cost per unit"
 	ColPctChange      = "% change"
