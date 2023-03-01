@@ -15,6 +15,7 @@ import (
 )
 
 const (
+	ColObject         = "object"
 	ColResourceUnit   = "resource"
 	ColMoDiffResource = "Δ"
 	ColMoDiffCost     = "Δ cost/mo"
@@ -99,7 +100,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
-			Name:      "Workload",
+			Name:      ColObject,
 			Align:     text.AlignLeft,
 			AutoMerge: true,
 
@@ -180,7 +181,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 	})
 
 	t.AppendHeader(table.Row{
-		"Workload",
+		ColObject,
 		ColMoDiffResource,
 		ColResourceUnit,
 		ColCostPerUnit,
