@@ -15,11 +15,11 @@ of any Kubernetes workload.
 now with `kubectl cost predict -f your-deployment.yaml`:
 
 ```
-+-------------------------------------+------------+-----------+----------+------------+
-| WORKLOAD                            | Δ CPU/MO   | Δ MEM/MO  | Δ GPU/MO | Δ TOTAL/MO |
-+-------------------------------------+------------+-----------+----------+------------+
-| default/deployment/test1-deployment | 209.47 USD | 18.72 USD | 0.00 USD | 228.19 USD |
-+-------------------------------------+------------+-----------+----------+------------+
+ OBJECT                        Δ QTY  RESOURCE UNIT   COST PER UNIT     Δ COST/MO  % CHANGE 
+────────────────────────────────────────────────────────────────────────────────────────────
+ kubecost1 deployment            -92  CPU millicores      0.023 USD     -2.14 USD   -92.00% 
+ kubecost1-cost-analyzer                                                                    
+                             -172.65  RAM MiB            0.0030 USD     -0.53 USD   -43.38% 
 ```
 
 
@@ -145,11 +145,14 @@ echo "$DEF" | kubectl cost predict -f -
 ```
 Example output:
 ```
-+---------------------------------------+------------+-----------+----------+------------+
-| WORKLOAD                              | Δ CPU/MO   | Δ MEM/MO  | Δ GPU/MO | Δ TOTAL/MO |
-+---------------------------------------+------------+-----------+----------+------------+
-| michaelkc/deployment/nginx-deployment | 209.47 USD | 18.72 USD | 0.00 USD | 228.18 USD |
-+---------------------------------------+------------+-----------+----------+------------+
+ OBJECT                      Δ QTY  RESOURCE UNIT  COST PER UNIT    Δ COST/MO  % CHANGE 
+────────────────────────────────────────────────────────────────────────────────────────
+ michaelkc deployment           +9  CPU cores          23.27 USD  +209.47 USD           
+ nginx-deployment                                                                       
+                                +6  RAM GiB             3.12 USD   +18.72 USD           
+                                                                                        
+────────────────────────────────────────────────────────────────────────────────────────
+ TOTAL MONTHLY COST CHANGE                                        +228.18 USD  
 ```
 
 Show how much each namespace cost over the past 5 days
