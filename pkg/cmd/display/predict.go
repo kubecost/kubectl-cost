@@ -198,54 +198,53 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		totalCostImpact += specData.CostChange.TotalMonthlyRate
 
 		workloadName := fmt.Sprintf("%s %s %s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
-		// t.AppendRow(table.Row{
-		// 	workloadName,
-		// 	workloadName,
-		// 	workloadName,
-		// 	workloadName,
-		// }, table.RowConfig{
-		// 	AutoMerge: true,
-		// })
 
-		cpuUnits := "CPU cores"
-		avgCPUInUnits := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
-		if avgCPUInUnits < 1 {
-			cpuUnits = "CPU millicores"
-			avgCPUInUnits = specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth * 1000
+		// Don't show resource if there is no cost data before or after
+		if !(specData.CostBefore.CPUMonthlyRate == 0 && specData.CostAfter.CPUMonthlyRate == 0) {
+			cpuUnits := "CPU cores"
+			avgCPUInUnits := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
+			if avgCPUInUnits < 1 {
+				cpuUnits = "CPU millicores"
+				avgCPUInUnits = specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth * 1000
+			}
+			costPerUnit := specData.CostChange.CPUMonthlyRate / avgCPUInUnits
+			cpuRow := table.Row{
+				workloadName,
+				avgCPUInUnits,
+				cpuUnits,
+				costPerUnit,
+				specData.CostChange.CPUMonthlyRate,
+			}
+			if specData.CostBefore.CPUMonthlyRate != 0 {
+				cpuRow = append(cpuRow, specData.CostChange.CPUMonthlyRate/specData.CostBefore.CPUMonthlyRate*100)
+			}
+			t.AppendRow(cpuRow)
 		}
-		costPerUnit := specData.CostChange.CPUMonthlyRate / avgCPUInUnits
-		cpuRow := table.Row{
-			workloadName,
-			avgCPUInUnits,
-			cpuUnits,
-			costPerUnit,
-			specData.CostChange.CPUMonthlyRate,
-		}
-		if specData.CostBefore.CPUMonthlyRate != 0 {
-			cpuRow = append(cpuRow, specData.CostChange.CPUMonthlyRate/specData.CostBefore.CPUMonthlyRate*100)
-		}
-		t.AppendRow(cpuRow)
 
-		ramUnits := "RAM GiB"
-		ramUnitDivisor := 1024 * 1024 * 1024.0
-		avgRAMInUnits := specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
-		if avgRAMInUnits < 1 {
-			ramUnits = "RAM MiB"
-			ramUnitDivisor = 1024 * 1024.0
-			avgRAMInUnits = specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+		if !(specData.CostBefore.RAMMonthlyRate == 0 && specData.CostAfter.RAMMonthlyRate == 0) {
+
+			ramUnits := "RAM GiB"
+			ramUnitDivisor := 1024 * 1024 * 1024.0
+			avgRAMInUnits := specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+			// If < 1 GiB, convert to MiB
+			if avgRAMInUnits < 1 {
+				ramUnits = "RAM MiB"
+				ramUnitDivisor = 1024 * 1024.0
+				avgRAMInUnits = specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+			}
+			costPerUnit := specData.CostChange.RAMMonthlyRate / avgRAMInUnits
+			ramRow := table.Row{
+				workloadName,
+				avgRAMInUnits,
+				ramUnits,
+				costPerUnit,
+				specData.CostChange.RAMMonthlyRate,
+			}
+			if specData.CostBefore.RAMMonthlyRate != 0 {
+				ramRow = append(ramRow, specData.CostChange.RAMMonthlyRate/specData.CostBefore.RAMMonthlyRate*100)
+			}
+			t.AppendRow(ramRow)
 		}
-		costPerUnit = specData.CostChange.RAMMonthlyRate / avgRAMInUnits
-		ramRow := table.Row{
-			workloadName,
-			avgRAMInUnits,
-			ramUnits,
-			costPerUnit,
-			specData.CostChange.RAMMonthlyRate,
-		}
-		if specData.CostBefore.RAMMonthlyRate != 0 {
-			ramRow = append(ramRow, specData.CostChange.RAMMonthlyRate/specData.CostBefore.RAMMonthlyRate*100)
-		}
-		t.AppendRow(ramRow)
 
 		if !(specData.CostBefore.GPUMonthlyRate == 0 && specData.CostAfter.GPUMonthlyRate == 0) {
 			avgGPUs := specData.CostChange.MonthlyGPUHours / timeutil.HoursPerMonth
