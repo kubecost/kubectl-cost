@@ -104,10 +104,14 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			Align:     text.AlignLeft,
 			AutoMerge: true,
 
+			// Currently this wrapping can result in overly-tall rows if merging
+			// wrapped text. While it is isn't perfect, I want to keep this on
+			// to use as little horizontal space as possible.
 			// When https://github.com/jedib0t/go-pretty/issues/261 is fixed, we
-			// can turn on WidthMax and wrapping to have a less-wide output
-			// WidthMax:         30,
-			// WidthMaxEnforcer: text.WrapSoft,
+			// should be able to update go-pretty to fix this unnecessary
+			// whitespace.
+			WidthMax:         26,
+			WidthMaxEnforcer: text.WrapSoft,
 		},
 		{
 			Name:  ColMoDiffResource,
