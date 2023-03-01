@@ -19,6 +19,7 @@ const (
 	ColMoDiffResource = "Δ"
 	ColMoDiffCost     = "Δ cost/mo"
 	ColCostPerUnit    = "cost per unit"
+	ColPctChange      = "% change"
 )
 
 type PredictDisplayOptions struct{}
@@ -36,10 +37,10 @@ func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyC
 	t.Render()
 }
 
-// fmtResourceFloat formats with a precision of 3 and then trims trailing 0s in
+// fmtResourceFloat formats with a precision of 2 and then trims trailing 0s in
 // the decimal places.
 func fmtResourceFloat(x float64) string {
-	s := fmt.Sprintf("%.3f", x)
+	s := fmt.Sprintf("%.2f", x)
 	if x > 0 {
 		s = fmt.Sprintf("+%s", s)
 	}
@@ -159,6 +160,23 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 				return "invalid value"
 			},
 		},
+		{
+			Name:  ColPctChange,
+			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					prefix := ""
+					if f > 0 {
+						prefix = "+"
+					}
+					return fmt.Sprintf("%s%.2f%%", prefix, f)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
+		},
 	})
 
 	t.AppendHeader(table.Row{
@@ -167,6 +185,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		ColResourceUnit,
 		ColCostPerUnit,
 		ColMoDiffCost,
+		ColPctChange,
 	})
 
 	totalCostImpact := 0.0
@@ -197,6 +216,9 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			costPerUnit,
 			specData.CostChange.CPUMonthlyRate,
 		}
+		if specData.CostBefore.CPUMonthlyRate != 0 {
+			cpuRow = append(cpuRow, specData.CostChange.CPUMonthlyRate/specData.CostBefore.CPUMonthlyRate*100)
+		}
 		t.AppendRow(cpuRow)
 
 		ramUnits := "RAM GiB"
@@ -215,6 +237,9 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			costPerUnit,
 			specData.CostChange.RAMMonthlyRate,
 		}
+		if specData.CostBefore.RAMMonthlyRate != 0 {
+			ramRow = append(ramRow, specData.CostChange.RAMMonthlyRate/specData.CostBefore.RAMMonthlyRate*100)
+		}
 		t.AppendRow(ramRow)
 
 		if !(specData.CostBefore.GPUMonthlyRate == 0 && specData.CostAfter.GPUMonthlyRate == 0) {
@@ -226,6 +251,9 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 				"GPUs",
 				costPerGPU,
 				specData.CostChange.GPUMonthlyRate,
+			}
+			if specData.CostBefore.GPUMonthlyRate != 0 {
+				gpuRow = append(gpuRow, specData.CostChange.GPUMonthlyRate/specData.CostBefore.GPUMonthlyRate*100)
 			}
 			t.AppendRow(gpuRow)
 		}

@@ -50,6 +50,31 @@ spec:
 apiVersion: apps/v1
 kind: Deployment
 metadata:
+  name: michaelkc-cost-analyzer
+  namespace: michaelkc
+  labels:
+    app: michaelkc-cost-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: michaelkc-cost-analyzer
+  template:
+    metadata:
+      labels:
+        app: michaelkc-cost-analyzer
+    spec:
+      containers:
+      - name: cost-model
+        image: nginx:1.14.2
+        resources:
+          requests:
+            cpu: "1m"
+            memory: "1Mi"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
   name: nginx-deployment-2
   labels:
     app: nginx
