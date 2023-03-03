@@ -15,6 +15,10 @@ type CostPrediction struct {
 	CPUMonthlyRate   float64 `json:"cpuMonthlyRate"`
 	RAMMonthlyRate   float64 `json:"ramMonthlyRate"`
 	GPUMonthlyRate   float64 `json:"gpuMonthlyRate"`
+
+	MonthlyCPUCoreHours float64 `json:"monthlyCPUCoreHours"`
+	MonthlyRAMByteHours float64 `json:"monthlyRAMByteHours"`
+	MonthlyGPUHours     float64 `json:"monthlyGPUHours"`
 }
 
 type SpecCostDiff struct {

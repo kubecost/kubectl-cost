@@ -3,8 +3,10 @@ package display
 import (
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
+	"github.com/opencost/opencost/pkg/util/timeutil"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -13,31 +15,20 @@ import (
 )
 
 const (
-	PredictColWorkload         = "Workload"
-	PredictColMoCostCPU        = "CPU/mo"
-	PredictColMoCostMemory     = "Mem/mo"
-	PredictColMoCostGPU        = "GPU/mo"
-	PredictColMoCostTotal      = "Total/mo"
-	PredictColMoCostDiffCPU    = "Δ CPU/mo"
-	PredictColMoCostDiffMemory = "Δ Mem/mo"
-	PredictColMoCostDiffGPU    = "Δ GPU/mo"
-	PredictColMoCostDiffTotal  = "Δ Total/mo"
+	ColObject         = "object"
+	ColResourceUnit   = "resource unit"
+	ColMoDiffResource = "Δ qty"
+	ColMoDiffCost     = "Δ cost/mo"
+	ColCostPerUnit    = "cost per unit"
+	ColPctChange      = "% change"
 )
 
-type PredictDisplayOptions struct {
-	OnlyDiff  bool
-	OnlyAfter bool
-}
+type PredictDisplayOptions struct{}
 
 func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOptions) {
-	cmd.Flags().BoolVar(&options.OnlyDiff, "only-diff", true, "Set true to only show the cost difference (cost \"impact\") instead of the overall cost plus diff.")
-	cmd.Flags().BoolVar(&options.OnlyAfter, "only-after", false, "Set true to only show the overall predicted cost of the workload.")
 }
 
 func (o *PredictDisplayOptions) Validate() error {
-	if o.OnlyDiff && o.OnlyAfter {
-		return fmt.Errorf("OnlyDiff and OnlyAfter cannot both be true.")
-	}
 	return nil
 }
 
@@ -47,137 +38,239 @@ func WritePredictionTable(out io.Writer, rowData []query.SpecCostDiff, currencyC
 	t.Render()
 }
 
-func MakePredictionTable(rowData []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
+// fmtResourceFloat formats with a precision of 2 and then trims trailing 0s in
+// the decimal places.
+func fmtResourceFloat(x float64) string {
+	s := fmt.Sprintf("%.2f", x)
+	if x > 0 {
+		s = fmt.Sprintf("+%s", s)
+	}
+
+	// If formatted float ends in .000, remove
+	s = strings.TrimRight(s, "0")
+	s = strings.TrimSuffix(s, ".")
+
+	return s
+}
+
+// fmtResourceCostFloat starts by formatting the given float at precision 2. If
+// the precision is insufficient for showing useful information, the precision
+// is increased.
+//
+// The bar for "useful information" is x < 1 (so we only have decimals) and all
+// decimal places except the final place are '0'.
+func fmtResourceCostFloat(x float64) string {
+	precision := 2
+	precisionToFmt := func(precision int) string {
+		return fmt.Sprintf("%%.%df", precision)
+	}
+	s := fmt.Sprintf(precisionToFmt(precision), x)
+	if x < 1 && x > 0 {
+		for {
+			secondToLast := s[len(s)-2]
+			if secondToLast != '0' {
+				break
+			}
+			precision += 1
+			s = fmt.Sprintf(precisionToFmt(precision), x)
+		}
+	}
+	return s
+}
+
+func fmtOverallCostFloat(x float64) string {
+	s := fmt.Sprintf("%.2f", x)
+	if x > 0 {
+		s = fmt.Sprintf("+%s", s)
+	}
+	return s
+}
+
+func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, opts PredictDisplayOptions) table.Writer {
 	t := table.NewWriter()
 
-	hideAfter := opts.OnlyDiff
-	hideDiff := opts.OnlyAfter
+	// start with this style, then we'll modify
+	style := table.StyleLight
+	style.Options.SeparateColumns = false
+	style.Options.DrawBorder = false
+	style.Options.SeparateHeader = true
+	style.Title.Colors = append(style.Title.Colors, text.Bold)
+	t.SetStyle(style)
+	// t.SetTitle("%s/%s/%s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
 
 	t.SetColumnConfigs([]table.ColumnConfig{
 		{
-			Name: PredictColWorkload,
+			Name:      ColObject,
+			Align:     text.AlignLeft,
+			AutoMerge: true,
+
+			// Currently this wrapping can result in overly-tall rows if merging
+			// wrapped text. While it is isn't perfect, I want to keep this on
+			// to use as little horizontal space as possible.
+			// When https://github.com/jedib0t/go-pretty/issues/261 is fixed, we
+			// should be able to update go-pretty to fix this unnecessary
+			// whitespace.
+			WidthMax:         26,
+			WidthMaxEnforcer: text.WrapSoft,
 		},
 		{
-			Name:        PredictColMoCostCPU,
-			Hidden:      hideAfter,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
+			Name:  ColMoDiffResource,
+			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmtResourceFloat(f)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 		{
-			Name:        PredictColMoCostMemory,
-			Hidden:      hideAfter,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
+			Name:  ColResourceUnit,
+			Align: text.AlignLeft,
 		},
 		{
-			Name:        PredictColMoCostGPU,
-			Hidden:      hideAfter,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
+			Name:  ColCostPerUnit,
+			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmt.Sprintf("%s %s", fmtResourceCostFloat(f), currencyCode)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 		{
-			Name:        PredictColMoCostTotal,
-			Hidden:      hideAfter,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
+			Name:  ColMoDiffCost,
+			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmt.Sprintf("%s %s", fmtOverallCostFloat(f), currencyCode)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
+			TransformerFooter: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					return fmt.Sprintf("%s %s", fmtOverallCostFloat(f), currencyCode)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 		{
-			Name:        PredictColMoCostDiffCPU,
-			Hidden:      hideDiff,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		},
-		{
-			Name:        PredictColMoCostDiffMemory,
-			Hidden:      hideDiff,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		},
-		{
-			Name:        PredictColMoCostDiffGPU,
-			Hidden:      hideDiff,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
-		},
-		{
-			Name:        PredictColMoCostDiffTotal,
-			Hidden:      hideDiff,
-			Align:       text.AlignRight,
-			AlignFooter: text.AlignRight,
+			Name:  ColPctChange,
+			Align: text.AlignRight,
+			Transformer: func(val interface{}) string {
+				if f, ok := val.(float64); ok {
+					prefix := ""
+					if f > 0 {
+						prefix = "+"
+					}
+					return fmt.Sprintf("%s%.2f%%", prefix, f)
+				}
+				if s, ok := val.(string); ok {
+					return s
+				}
+				return "invalid value"
+			},
 		},
 	})
 
 	t.AppendHeader(table.Row{
-		PredictColWorkload,
-		PredictColMoCostCPU,
-		PredictColMoCostMemory,
-		PredictColMoCostGPU,
-		PredictColMoCostTotal,
-		PredictColMoCostDiffCPU,
-		PredictColMoCostDiffMemory,
-		PredictColMoCostDiffGPU,
-		PredictColMoCostDiffTotal,
+		ColObject,
+		ColMoDiffResource,
+		ColResourceUnit,
+		ColCostPerUnit,
+		ColMoDiffCost,
+		ColPctChange,
 	})
 
-	t.SortBy([]table.SortBy{
-		{
-			Name: PredictColMoCostTotal,
-			Mode: table.DscNumeric,
-		},
-	})
+	totalCostImpact := 0.0
+	for _, specData := range specDiffs {
+		totalCostImpact += specData.CostChange.TotalMonthlyRate
 
-	var summedMonthlyCPU float64
-	var summedMonthlyMem float64
-	var summedMonthlyGPU float64
-	var summedMonthlyDiffCPU float64
-	var summedMonthlyDiffMemory float64
-	var summedMonthlyDiffGPU float64
-	var summedMonthlyTotal float64
-	var summedMonthlyDiffTotal float64
+		workloadName := fmt.Sprintf("%s %s %s", specData.Namespace, specData.ControllerKind, specData.ControllerName)
 
-	for _, r := range rowData {
-		row := table.Row{}
-		row = append(row, fmt.Sprintf("%s/%s/%s", r.Namespace, r.ControllerKind, r.ControllerName))
-
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostAfter.CPUMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostAfter.RAMMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostAfter.GPUMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostAfter.TotalMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostChange.CPUMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostChange.RAMMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostChange.GPUMonthlyRate, currencyCode))
-		row = append(row, fmt.Sprintf("%.2f %s", r.CostChange.TotalMonthlyRate, currencyCode))
-
-		summedMonthlyCPU += r.CostAfter.CPUMonthlyRate
-		summedMonthlyMem += r.CostAfter.RAMMonthlyRate
-		summedMonthlyGPU += r.CostAfter.GPUMonthlyRate
-		summedMonthlyDiffCPU += r.CostChange.CPUMonthlyRate
-		summedMonthlyDiffMemory += r.CostChange.RAMMonthlyRate
-		summedMonthlyDiffGPU += r.CostChange.GPUMonthlyRate
-		summedMonthlyTotal += r.CostAfter.TotalMonthlyRate
-		summedMonthlyDiffTotal += r.CostChange.TotalMonthlyRate
-
-		t.AppendRow(row)
-	}
-
-	// A summary footer is redundant if there is only one row
-	if len(rowData) > 1 {
-		footerRow := table.Row{}
-		blankRows := 1
-
-		for i := 0; i < blankRows; i++ {
-			footerRow = append(footerRow, "")
+		// Don't show resource if there is no cost data before or after
+		if !(specData.CostBefore.CPUMonthlyRate == 0 && specData.CostAfter.CPUMonthlyRate == 0) {
+			cpuUnits := "CPU cores"
+			avgCPUInUnits := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
+			if avgCPUInUnits < 1 {
+				cpuUnits = "CPU millicores"
+				avgCPUInUnits = specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth * 1000
+			}
+			costPerUnit := specData.CostChange.CPUMonthlyRate / avgCPUInUnits
+			cpuRow := table.Row{
+				workloadName,
+				avgCPUInUnits,
+				cpuUnits,
+				costPerUnit,
+				specData.CostChange.CPUMonthlyRate,
+			}
+			if specData.CostBefore.CPUMonthlyRate != 0 {
+				cpuRow = append(cpuRow, specData.CostChange.CPUMonthlyRate/specData.CostBefore.CPUMonthlyRate*100)
+			}
+			t.AppendRow(cpuRow)
 		}
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyCPU, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyMem, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyGPU, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyTotal, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyDiffCPU, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyDiffMemory, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyDiffGPU, currencyCode))
-		footerRow = append(footerRow, fmt.Sprintf("%.2f %s", summedMonthlyDiffTotal, currencyCode))
-		t.AppendFooter(footerRow)
+
+		if !(specData.CostBefore.RAMMonthlyRate == 0 && specData.CostAfter.RAMMonthlyRate == 0) {
+
+			ramUnits := "RAM GiB"
+			ramUnitDivisor := 1024 * 1024 * 1024.0
+			avgRAMInUnits := specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+			// If < 1 GiB, convert to MiB
+			if avgRAMInUnits < 1 {
+				ramUnits = "RAM MiB"
+				ramUnitDivisor = 1024 * 1024.0
+				avgRAMInUnits = specData.CostChange.MonthlyRAMByteHours / ramUnitDivisor / timeutil.HoursPerMonth
+			}
+			costPerUnit := specData.CostChange.RAMMonthlyRate / avgRAMInUnits
+			ramRow := table.Row{
+				workloadName,
+				avgRAMInUnits,
+				ramUnits,
+				costPerUnit,
+				specData.CostChange.RAMMonthlyRate,
+			}
+			if specData.CostBefore.RAMMonthlyRate != 0 {
+				ramRow = append(ramRow, specData.CostChange.RAMMonthlyRate/specData.CostBefore.RAMMonthlyRate*100)
+			}
+			t.AppendRow(ramRow)
+		}
+
+		if !(specData.CostBefore.GPUMonthlyRate == 0 && specData.CostAfter.GPUMonthlyRate == 0) {
+			avgGPUs := specData.CostChange.MonthlyGPUHours / timeutil.HoursPerMonth
+			costPerGPU := specData.CostChange.GPUMonthlyRate / avgGPUs
+			gpuRow := table.Row{
+				workloadName,
+				avgGPUs,
+				"GPUs",
+				costPerGPU,
+				specData.CostChange.GPUMonthlyRate,
+			}
+			if specData.CostBefore.GPUMonthlyRate != 0 {
+				gpuRow = append(gpuRow, specData.CostChange.GPUMonthlyRate/specData.CostBefore.GPUMonthlyRate*100)
+			}
+			t.AppendRow(gpuRow)
+		}
+		t.AppendSeparator()
 	}
+
+	t.AppendFooter(table.Row{
+		"Total monthly cost change",
+		"",
+		"",
+		"",
+		totalCostImpact,
+	})
 
 	return t
 }

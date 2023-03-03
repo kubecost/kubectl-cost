@@ -5,7 +5,7 @@ go 1.16
 require (
 	github.com/gdamore/tcell/v2 v2.0.1-0.20201017141208-acf90d56d591
 	github.com/imdario/mergo v0.3.11 // indirect
-	github.com/jedib0t/go-pretty/v6 v6.1.0
+	github.com/jedib0t/go-pretty/v6 v6.4.6
 	github.com/opencost/opencost v1.99.0
 	github.com/rivo/tview v0.0.0-20210216210747-c3311ba972c1
 	github.com/spf13/cobra v1.2.1
