@@ -39,7 +39,7 @@ func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOp
 
 func (o *PredictDisplayOptions) Validate() error {
 	if !o.ShowNew && o.HideDiff {
-		return fmt.Errorf("ShowAfter and HideDiff cannot be set such that no data will be shown")
+		return fmt.Errorf("ShowNew and HideDiff cannot be set such that no data will be shown")
 	}
 	return nil
 }
@@ -342,12 +342,12 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 	}
 
 	t.AppendFooter(table.Row{
-		"Total monthly cost change",
+		"Total monthly cost",
 		"",
 		"",
 		"",
 		"",
-		"",
+		totalCostNew,
 		totalCostImpact,
 	})
 
