@@ -69,7 +69,8 @@ func NewCmdPredict(
 	cmd.Flags().StringVar(&predictO.avgUsageWindow, "window-usage", "2d", "The window of Kubecost data to calculate historical average usage from, if historical data exists. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 	cmd.Flags().StringVar(&predictO.resourceCostWindow, "window-cost", "7d offset 48h", "The window of Kubecost data to base resource costs on. Defaults with an offset of 48h to incorporate reconciled data if reconciliation is set up. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 	cmd.Flags().BoolVar(&predictO.noUsage, "no-usage", false, "Set true ignore historical usage data (if any exists) when performing cost prediction.")
-	cmd.Flags().BoolVar(&predictO.ShowAfter, "show-new", false, "Show the total cost of the new spec alongside the diff.")
+	cmd.Flags().BoolVar(&predictO.ShowNew, "show-new", false, "Show the total cost of the new spec.")
+	cmd.Flags().BoolVar(&predictO.HideDiff, "hide-diff", false, "Hide the diff information.")
 
 	query.AddQueryBackendOptionsFlags(cmd, &predictO.QueryBackendOptions)
 	display.AddPredictDisplayOptionsFlags(cmd, &predictO.PredictDisplayOptions)

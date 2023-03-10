@@ -26,15 +26,21 @@ const (
 )
 
 type PredictDisplayOptions struct {
-	// ShowAfter determines if "After" cost info will be shown alongside the
+	// ShowNew determines if "After" cost info will be shown alongside the
 	// diff
-	ShowAfter bool
+	ShowNew bool
+
+	// HideDiff will disable diff information if true
+	HideDiff bool
 }
 
 func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOptions) {
 }
 
 func (o *PredictDisplayOptions) Validate() error {
+	if !o.ShowNew && o.HideDiff {
+		return fmt.Errorf("ShowAfter and HideDiff cannot be set such that no data will be shown")
+	}
 	return nil
 }
 
@@ -115,7 +121,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		},
 		{
 			Name:   ColMoResource,
-			Hidden: !opts.ShowAfter,
+			Hidden: !opts.ShowNew,
 			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
@@ -128,8 +134,9 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			},
 		},
 		{
-			Name:  ColMoDiffResource,
-			Align: text.AlignRight,
+			Name:   ColMoDiffResource,
+			Hidden: opts.HideDiff,
+			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
 					s := fmtResourceFloat(f)
@@ -163,7 +170,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		},
 		{
 			Name:   ColMoCost,
-			Hidden: !opts.ShowAfter,
+			Hidden: !opts.ShowNew,
 			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
@@ -185,8 +192,9 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			},
 		},
 		{
-			Name:  ColMoDiffCost,
-			Align: text.AlignRight,
+			Name:   ColMoDiffCost,
+			Hidden: opts.HideDiff,
+			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
 					s := fmt.Sprintf("%s %s", fmtOverallCostFloat(f), currencyCode)
@@ -215,8 +223,9 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			},
 		},
 		{
-			Name:  ColPctChange,
-			Align: text.AlignRight,
+			Name:   ColPctChange,
+			Hidden: opts.HideDiff,
+			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
 					prefix := ""
