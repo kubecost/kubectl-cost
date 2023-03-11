@@ -267,7 +267,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			avgUnitsNew := specData.CostAfter.MonthlyCPUCoreHours / timeutil.HoursPerMonth
 			avgUnitsDiff := specData.CostChange.MonthlyCPUCoreHours / timeutil.HoursPerMonth
 			factor := 1.0
-			if avgUnitsNew < 1 {
+			if avgUnitsNew*factor < 1 {
 				units = "CPU millicores"
 				factor = 1000
 			}
@@ -294,7 +294,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 			avgUnitsNew := specData.CostAfter.MonthlyRAMByteHours / timeutil.HoursPerMonth
 			avgUnitsDiff := specData.CostChange.MonthlyRAMByteHours / timeutil.HoursPerMonth
 			factor := 1.0 / (1024 * 1024 * 1024)
-			if avgUnitsNew < 1 {
+			if avgUnitsNew*factor < 1 {
 				units = "RAM MiB"
 				factor = 1.0 / (1024 * 1024)
 			}
