@@ -39,7 +39,7 @@ func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOp
 
 func (o *PredictDisplayOptions) Validate() error {
 	if !o.ShowTotal && o.HideDiff {
-		return fmt.Errorf("ShowNew and HideDiff cannot be set such that no data will be shown")
+		return fmt.Errorf("ShowTotal and HideDiff cannot be set such that no data will be shown")
 	}
 	return nil
 }
