@@ -23,7 +23,8 @@ import (
 
 // PredictOptions contains options specific to prediction queries.
 type PredictOptions struct {
-	window string
+	avgUsageWindow     string
+	resourceCostWindow string
 
 	clusterID string
 
@@ -65,7 +66,8 @@ func NewCmdPredict(
 	}
 	cmd.Flags().StringVarP(&predictO.filepath, "filepath", "f", "", "The file containing the workload definition whose cost should be predicted. E.g. a file might be 'test-deployment.yaml' containing an apps/v1 Deployment definition. '-' can also be passed, in which case workload definitions will be read from stdin.")
 	cmd.Flags().StringVarP(&predictO.clusterID, "cluster-id", "c", "", "The cluster ID (in Kubecost) of the presumed cluster which the workload will be deployed to. This is used to determine resource costs. Defaults to local cluster.")
-	cmd.Flags().StringVar(&predictO.window, "window", "2d", "The window of cost data to base resource costs on. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
+	cmd.Flags().StringVar(&predictO.avgUsageWindow, "window-usage", "2d", "The window of Kubecost data to calculate historical average usage from, if historical data exists. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
+	cmd.Flags().StringVar(&predictO.resourceCostWindow, "window-cost", "7d offset 48h", "The window of Kubecost data to base resource costs on. Defaults with an offset of 48h to incorporate reconciled data if reconciliation is set up. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 	cmd.Flags().BoolVar(&predictO.noUsage, "no-usage", false, "Set true ignore historical usage data (if any exists) when performing cost prediction.")
 	cmd.Flags().BoolVar(&predictO.ShowTotal, "show-total", false, "Show the total cost of the new spec(s). See --hide-diff for a similar option..")
 	cmd.Flags().BoolVar(&predictO.HideDiff, "hide-diff", false, "Hide the cost difference of applying the new spec(s). See --show-total for a similar option..")
@@ -151,10 +153,11 @@ func runCostPredict(ko *utilities.KubeOptions, no *PredictOptions) error {
 		QueryBackendOptions: no.QueryBackendOptions,
 		SpecBytes:           b,
 		QueryParams: map[string]string{
-			"noUsage":          fmt.Sprint(no.noUsage),
-			"window":           no.window,
-			"clusterID":        no.clusterID,
-			"defaultNamespace": ko.DefaultNamespace,
+			"noUsage":            fmt.Sprint(no.noUsage),
+			"windowAvgUsage":     no.avgUsageWindow,
+			"windowResourceCost": no.resourceCostWindow,
+			"clusterID":          no.clusterID,
+			"defaultNamespace":   ko.DefaultNamespace,
 		},
 	})
 	if err != nil {
