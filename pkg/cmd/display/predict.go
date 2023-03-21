@@ -26,9 +26,9 @@ const (
 )
 
 type PredictDisplayOptions struct {
-	// ShowNew determines if "After" cost info will be shown alongside the
+	// ShowTotal determines if "After" cost info will be shown alongside the
 	// diff
-	ShowNew bool
+	ShowTotal bool
 
 	// HideDiff will disable diff information if true
 	HideDiff bool
@@ -38,7 +38,7 @@ func AddPredictDisplayOptionsFlags(cmd *cobra.Command, options *PredictDisplayOp
 }
 
 func (o *PredictDisplayOptions) Validate() error {
-	if !o.ShowNew && o.HideDiff {
+	if !o.ShowTotal && o.HideDiff {
 		return fmt.Errorf("ShowNew and HideDiff cannot be set such that no data will be shown")
 	}
 	return nil
@@ -121,7 +121,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		},
 		{
 			Name:   ColMoResource,
-			Hidden: !opts.ShowNew,
+			Hidden: !opts.ShowTotal,
 			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
@@ -170,7 +170,7 @@ func MakePredictionTable(specDiffs []query.SpecCostDiff, currencyCode string, op
 		},
 		{
 			Name:   ColMoCost,
-			Hidden: !opts.ShowNew,
+			Hidden: !opts.ShowTotal,
 			Align:  text.AlignRight,
 			Transformer: func(val interface{}) string {
 				if f, ok := val.(float64); ok {
