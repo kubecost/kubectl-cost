@@ -25,8 +25,8 @@ $binary namespace --window 5d
 # https://stackoverflow.com/questions/59895/how-do-i-get-the-directory-where-a-bash-script-is-located-from-within-the-script
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 $binary predict -f "${SCRIPT_DIR}/multi.yaml"
-$binary predict --show-cost-per-resource-hr -f "${SCRIPT_DIR}/multi.yaml"
-$binary predict --no-diff --show-cost-per-resource-hr -f "${SCRIPT_DIR}/multi.yaml"
+$binary predict --no-usage -f "${SCRIPT_DIR}/multi.yaml"
+$binary predict --hide-diff --show-total -f "${SCRIPT_DIR}/multi.yaml"
 
 # Show how much each namespace cost over the past 5 days
 # with additional CPU and memory cost and without efficiency.
