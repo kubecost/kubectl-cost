@@ -54,9 +54,7 @@ func QuerySpecCost(p SpecCostParameters) (SpecCostResponse, error) {
 			p.Ctx,
 			p.PredictSpecCostPath,
 			p.QueryParams,
-			map[string]string{
-				"Content-Type": "application/yaml",
-			},
+			nil,
 			p.SpecBytes,
 		)
 		if err != nil {
