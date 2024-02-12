@@ -81,9 +81,10 @@ func runCostLabel(ko *utilities.KubeOptions, no *CostOptionsLabel) error {
 	allocations, err := query.QueryAllocation(query.AllocationParameters{
 		Ctx: context.Background(),
 		QueryParams: map[string]string{
-			"window":     no.window,
-			"aggregate":  strings.Join(aggregation, ","),
-			"accumulate": "true",
+			"window":      no.window,
+			"aggregate":   strings.Join(aggregation, ","),
+			"accumulate":  "true",
+			"includeIdle": "true",
 		},
 		QueryBackendOptions: no.QueryBackendOptions,
 	})

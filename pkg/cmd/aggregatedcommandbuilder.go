@@ -76,6 +76,7 @@ func runAggregatedAllocationCommand(ko *utilities.KubeOptions, o AggregatedAlloc
 			"window":           o.window,
 			"aggregate":        strings.Join(aggregation, ","),
 			"accumulate":       "true",
+			"includeIdle":      "true",
 			"filterNamespaces": o.filterNamespace,
 		},
 		QueryBackendOptions: o.QueryBackendOptions,
