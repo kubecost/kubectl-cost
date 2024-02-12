@@ -84,7 +84,8 @@ func runCostLabel(ko *utilities.KubeOptions, no *CostOptionsLabel) error {
 			"window":      no.window,
 			"aggregate":   strings.Join(aggregation, ","),
 			"accumulate":  "true",
-			"includeIdle": "true",
+			"includeIdle": fmt.Sprintf("%t", no.includeIdle),
+			"idle":        fmt.Sprintf("%t", no.includeIdle),
 		},
 		QueryBackendOptions: no.QueryBackendOptions,
 	})
