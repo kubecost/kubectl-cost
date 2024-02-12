@@ -25,7 +25,7 @@ type CostOptions struct {
 func addCostOptionsFlags(cmd *cobra.Command, options *CostOptions) {
 	cmd.Flags().StringVar(&options.window, "window", "1d", "The window of data to query. See https://github.com/kubecost/docs/blob/master/allocation.md#querying for a detailed explanation of what can be passed here.")
 	cmd.Flags().BoolVar(&options.isHistorical, "historical", false, "show the total cost during the window instead of the projected monthly rate based on the data in the window")
-	cmd.Flags().BoolVar(&options.includeIdle, "include-idle", true, "include the __idle__ cost row in the response")
+	cmd.Flags().BoolVar(&options.includeIdle, "idle", true, "include the __idle__ cost row in the response")
 
 	query.AddQueryBackendOptionsFlags(cmd, &options.QueryBackendOptions)
 }
