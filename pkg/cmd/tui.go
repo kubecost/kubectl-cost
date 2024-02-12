@@ -278,9 +278,10 @@ func runTUI(ko *utilities.KubeOptions, do display.AllocationDisplayOptions, qo q
 			queriedAllocs, err := query.QueryAllocation(query.AllocationParameters{
 				Ctx: queryContext,
 				QueryParams: map[string]string{
-					"window":     windowOptions[windowIndex],
-					"aggregate":  strings.Join(aggregation, ","),
-					"accumulate": "true",
+					"window":      windowOptions[windowIndex],
+					"aggregate":   strings.Join(aggregation, ","),
+					"accumulate":  "true",
+					"includeIdle": "true",
 				},
 				QueryBackendOptions: qo,
 			})
