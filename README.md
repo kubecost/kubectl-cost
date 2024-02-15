@@ -7,7 +7,7 @@ allows developers, devops, and others to quickly determine the cost & efficiency
 of any Kubernetes workload.
 
 > Note: If you use [OpenCost](https://github.com/opencost/opencost), most of 
-> `kubectl cost` works! See the [OpenCost documentation](https://www.opencost.io/docs/kubectl-cost)
+> `kubectl cost` works! See the [OpenCost documentation](https://www.opencost.io/docs/integrations/kubectl-cost)
 > for examples. Let us know how it goes, and open an issue if you encounter any
 > problems!
 
