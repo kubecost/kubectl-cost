@@ -327,7 +327,7 @@ curl -G 'http://localhost:8080/api/v1/namespaces/kubecost/services/kubecost-cost
 If that `curl` succeeds, `--use-proxy` flag in CLI or setting up environment variable `KUBECTL_COST_USE_PROXY` should work for you.
 
 Otherwise:
-- There may be an underlying problem with your Kubecost install, try `kubectl port-forward`ing the `kubecost-cost-analyzer` service, port 9090, and querying [one of our APIs](https://github.com/kubecost/docs/blob/master/apis.md).
+- There may be an underlying problem with your Kubecost install, try `kubectl port-forward`ing the `kubecost-cost-analyzer` service, port 9090, and querying [one of our APIs](https://docs.kubecost.com/apis/apis-overview).
 - Your problem could be a security configuration that is preventing the API server communicating with certain namespaces or proxying requests in general.
 - If you're still having problems, hit us up on Slack (see below) or open an issue on this repo.
 
