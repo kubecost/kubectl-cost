@@ -261,13 +261,13 @@ Kubecost/OpenCost APIs:
     --service-name string             The name of the Kubecost cost analyzer service. By default, it is derived from the Helm release name and should not need to be overridden.
     --service-port int                The port of the service at which the APIs are running. If using OpenCost, you may want to set this to 9003. (default 9090)
     -N, --kubecost-namespace string   The namespace that Kubecost is deployed in. Requests to the API will be directed to this namespace. Defaults to the Helm release name.
-
     --use-proxy                       Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.
 
     --allocation-path string          URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute' (default "/model/allocation")
 
     --predict-speccost-path string    URL path at which Prediction queries can be served from the configured service. (default "/model/prediction/speccost")
     --no-usage                        Set true ignore historical usage data (if any exists) when performing cost prediction.
+    --opencost                          Set true to configure Kubecost parameters according to the OpenCost default specification.
     --only-after                      Set true to only show the overall predicted cost of the workload.
     --only-diff                       Set true to only show the cost difference (cost "impact") instead of the overall cost plus diff. (default true)
 ```

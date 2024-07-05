@@ -14,6 +14,14 @@ import (
 	"github.com/spf13/viper"
 )
 
+// OpenCost specification parameter values
+const (
+	OpenCostServiceName      = "opencost"
+	OpenCostServiceNamespace = "opencost"
+	OpenCostServicePort      = 9003
+	OpenCostAllocationPath   = "/allocation/compute"
+)
+
 // QueryBackendOptions holds common options for managing the query backend used
 // by kubectl-cost, like service name, namespace, etc.
 type QueryBackendOptions struct {
@@ -45,11 +53,20 @@ type QueryBackendOptions struct {
 	// e.g. "/prediction/speccost"
 	PredictSpecCostPath string
 
+	// A boolean value  to automatically set parameters according to OpenCost specification.
+	OpenCost bool
+
 	restConfig *rest.Config
 	pfQuerier  *PortForwardQuerier
 }
 
 func (o *QueryBackendOptions) Complete(restConfig *rest.Config) error {
+	if o.OpenCost {
+		o.ServiceName = OpenCostServiceName
+		o.KubecostNamespace = OpenCostServiceNamespace
+		o.ServicePort = OpenCostServicePort
+		o.AllocationPath = OpenCostAllocationPath
+	}
 	if o.ServiceName == "" {
 		o.ServiceName = fmt.Sprintf("%s-cost-analyzer", o.HelmReleaseName)
 		log.Debugf("ServiceName set to: %s", o.ServiceName)
@@ -92,6 +109,7 @@ func AddQueryBackendOptionsFlags(cmd *cobra.Command, options *QueryBackendOption
 	cmd.Flags().BoolVar(&options.UseProxy, "use-proxy", false, "Instead of temporarily port-forwarding, proxy a request to Kubecost through the Kubernetes API server.")
 	cmd.Flags().StringVar(&options.AllocationPath, "allocation-path", "/model/allocation", "URL path at which Allocation queries can be served from the configured service. If using OpenCost, you may want to set this to '/allocation/compute'")
 	cmd.Flags().StringVar(&options.PredictSpecCostPath, "predict-speccost-path", "/model/prediction/speccost", "URL path at which Prediction queries can be served from the configured service.")
+	cmd.Flags().BoolVar(&options.OpenCost, "opencost", false, " Set true to configure Kubecost parameters according to the OpenCost default specification.")
 
 	//Check if environment variable KUBECTL_COST_USE_PROXY is set, it defaults to false
 	v := viper.New()
