@@ -267,7 +267,7 @@ Kubecost/OpenCost APIs:
 
     --predict-speccost-path string    URL path at which Prediction queries can be served from the configured service. (default "/model/prediction/speccost")
     --no-usage                        Set true ignore historical usage data (if any exists) when performing cost prediction.
-    --opencost                          Set true to configure Kubecost parameters according to the OpenCost default specification.
+    --opencost                        Set true to configure Kubecost parameters according to the OpenCost default specification. It is equivalent to providing the options '--service-port 9003 --service-name opencost --kubecost-namespace opencost --allocation-path /allocation/compute'
     --only-after                      Set true to only show the overall predicted cost of the workload.
     --only-diff                       Set true to only show the cost difference (cost "impact") instead of the overall cost plus diff. (default true)
 ```
