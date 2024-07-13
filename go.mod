@@ -1,6 +1,6 @@
 module github.com/kubecost/kubectl-cost
 
-go 1.16
+go 1.18
 
 require (
 	github.com/emicklei/go-restful v2.16.0+incompatible // indirect
