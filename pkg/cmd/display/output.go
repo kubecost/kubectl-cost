@@ -7,9 +7,9 @@ import (
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
+	"github.com/opencost/opencost/core/pkg/opencost"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
-	"github.com/opencost/opencost/pkg/kubecost"
 
 	"github.com/spf13/cobra"
 )
@@ -96,14 +96,14 @@ func (do *AssetDisplayOptions) Complete() {
 	}
 }
 
-func WriteAllocationTable(out io.Writer, aggregation []string, allocations map[string]kubecost.Allocation, opts AllocationDisplayOptions, currencyCode string, projectToMonthlyRate bool) {
+func WriteAllocationTable(out io.Writer, aggregation []string, allocations map[string]opencost.Allocation, opts AllocationDisplayOptions, currencyCode string, projectToMonthlyRate bool) {
 	t := MakeAllocationTable(aggregation, allocations, opts, currencyCode, projectToMonthlyRate)
 
 	t.SetOutputMirror(out)
 	t.Render()
 }
 
-func MakeAllocationTable(aggregation []string, allocations map[string]kubecost.Allocation, opts AllocationDisplayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
+func MakeAllocationTable(aggregation []string, allocations map[string]opencost.Allocation, opts AllocationDisplayOptions, currencyCode string, projectToMonthlyRate bool) table.Writer {
 	t := table.NewWriter()
 
 	columnConfigs := []table.ColumnConfig{}

@@ -13,7 +13,7 @@ import (
 	"github.com/kubecost/kubectl-cost/pkg/cmd/utilities"
 	"github.com/kubecost/kubectl-cost/pkg/query"
 
-	"github.com/opencost/opencost/pkg/log"
+	"github.com/opencost/opencost/core/pkg/log"
 
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
