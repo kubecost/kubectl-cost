@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/opencost/opencost/pkg/log"
+	"github.com/opencost/opencost/core/pkg/log"
 
 	"k8s.io/client-go/rest"
 )

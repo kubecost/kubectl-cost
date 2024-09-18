@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
-	"github.com/opencost/opencost/pkg/util/timeutil"
+	"github.com/opencost/opencost/core/pkg/util/timeutil"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"

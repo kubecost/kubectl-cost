@@ -3,11 +3,11 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/opencost/opencost/core/pkg/opencost"
 	"github.com/spf13/cobra"
 	"k8s.io/client-go/rest"
 
 	"github.com/kubecost/kubectl-cost/pkg/query"
-	"github.com/opencost/opencost/pkg/kubecost"
 )
 
 // CostOptions holds common options for querying and displaying
@@ -40,7 +40,7 @@ func (co *CostOptions) Complete(restConfig *rest.Config) error {
 func (co *CostOptions) Validate() error {
 	// make sure window parses client-side, may not be necessary but allows
 	// for a nicer error message for the user
-	if _, err := kubecost.ParseWindowWithOffset(co.window, 0); err != nil {
+	if _, err := opencost.ParseWindowWithOffset(co.window, 0); err != nil {
 		return fmt.Errorf("failed to parse window: %s", err)
 	}
 

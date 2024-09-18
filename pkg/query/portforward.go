@@ -18,7 +18,7 @@ import (
 	"k8s.io/client-go/tools/portforward"
 	"k8s.io/client-go/transport/spdy"
 
-	"github.com/opencost/opencost/pkg/log"
+	"github.com/opencost/opencost/core/pkg/log"
 )
 
 type PortForwardQuerier struct {

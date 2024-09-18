@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/opencost/opencost/core/pkg/opencost"
 	"k8s.io/client-go/kubernetes"
-
-	"github.com/opencost/opencost/pkg/kubecost"
 )
 
 type AllocationParameters struct {
@@ -20,13 +19,13 @@ type AllocationParameters struct {
 
 type allocationResponse struct {
 	Code int                              `json:"code"`
-	Data []map[string]kubecost.Allocation `json:"data"`
+	Data []map[string]opencost.Allocation `json:"data"`
 }
 
 // QueryAllocation queries the Allocation API by proxying a request to Kubecost
 // through the Kubernetes API server if useProxy is true or, if it isn't, by
 // temporarily port forwarding to a Kubecost pod.
-func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, error) {
+func QueryAllocation(p AllocationParameters) ([]map[string]opencost.Allocation, error) {
 	var bytes []byte
 	var err error
 
@@ -38,7 +37,7 @@ func QueryAllocation(p AllocationParameters) ([]map[string]kubecost.Allocation, 
 
 		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, fmt.Sprint(p.ServicePort), p.AllocationPath, p.QueryParams).DoRaw(p.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+			return nil, fmt.Errorf("failed to proxy get opencost. err: %s; data: %s", err, bytes)
 		}
 	} else {
 		bytes, err = p.QueryBackendOptions.pfQuerier.queryGet(p.Ctx, p.AllocationPath, p.QueryParams)

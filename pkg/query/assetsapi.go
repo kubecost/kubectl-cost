@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/opencost/opencost/pkg/kubecost"
+	"github.com/opencost/opencost/core/pkg/opencost"
 	"k8s.io/client-go/kubernetes"
 )
 
@@ -55,7 +55,7 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 
 		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, string(p.ServicePort), "/model/assets", requestParams).DoRaw(p.Ctx)
 		if err != nil {
-			return nil, fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
+			return nil, fmt.Errorf("failed to proxy get opencost. err: %s; data: %s", err, bytes)
 		}
 	} else {
 		bytes, err = p.QueryBackendOptions.pfQuerier.queryGet(p.Ctx, "model/assets", requestParams)
@@ -75,8 +75,8 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 
 type AssetNode struct {
 	Type         string                   `json:"type"`
-	Properties   kubecost.AssetProperties `json:"properties"`
-	Labels       kubecost.AssetLabels     `json:"labels"`
+	Properties   opencost.AssetProperties `json:"properties"`
+	Labels       opencost.AssetLabels     `json:"labels"`
 	Start        string                   `json:"start"`
 	End          string                   `json:"end"`
 	Minutes      float64                  `json:"minutes"`
@@ -86,8 +86,8 @@ type AssetNode struct {
 	CPUCoreHours float64                  `json:"cpuCoreHours"`
 	RAMByteHours float64                  `json:"ramByteHours"`
 	GPUHours     float64                  `json:"GPUHours"`
-	CPUBreakdown kubecost.Breakdown       `json:"cpuBreakdown"`
-	GPUBreakdown kubecost.Breakdown       `json:"ramBreakdown"`
+	CPUBreakdown opencost.Breakdown       `json:"cpuBreakdown"`
+	GPUBreakdown opencost.Breakdown       `json:"ramBreakdown"`
 	Preemptible  float64                  `json:"preemptible"`
 	Discount     float64                  `json:"discount"`
 	CPUCost      float64                  `json:"cpuCost"`
