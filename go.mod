@@ -6,7 +6,7 @@ toolchain go1.23.4
 
 require (
 	github.com/gdamore/tcell/v2 v2.0.1-0.20201017141208-acf90d56d591
-	github.com/jedib0t/go-pretty/v6 v6.4.6
+	github.com/jedib0t/go-pretty/v6 v6.6.5
 	github.com/opencost/opencost/core v0.0.0-20240912174545-805b23175184
 	github.com/rivo/tview v0.0.0-20210216210747-c3311ba972c1
 	github.com/spf13/cobra v1.8.1
@@ -52,7 +52,7 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.0.3 // indirect
 	github.com/magiconair/properties v1.8.5 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
-	github.com/mattn/go-runewidth v0.0.13 // indirect
+	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/mitchellh/mapstructure v1.5.0 // indirect
 	github.com/moby/spdystream v0.5.0 // indirect
 	github.com/moby/term v0.5.0 // indirect
