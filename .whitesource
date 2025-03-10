@@ -1,3 +1,6 @@
 {
-  "settingsInheritedFrom": "whitesource-config/whitesource-config@master"
+  "settingsInheritedFrom": "whitesource-config/whitesource-config@master",
+  "scanSettingsSAST": {
+        "enableScan": true
+  }
 }
