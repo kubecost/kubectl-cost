@@ -9,6 +9,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Label new issues with 'needs-triage'
-        uses: andymckay/labeler@1.0.4
+        uses: kubecost/labeler@1.0.4
         with:
           add-labels: "needs-triage"
