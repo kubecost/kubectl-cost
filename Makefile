@@ -24,6 +24,14 @@ linux-amd64:
 		cmd/kubectl-cost/kubectl-cost-linux-amd64 \
 		LICENSE
 
+.PHONY: linux-arm64
+linux-arm64:
+	cd cmd/kubectl-cost && ${COMMONBUILDARGS} GOOS=linux GOARCH=arm64 govvv build -o kubectl-cost-linux-arm64
+	tar --transform 's|.*kubectl-cost-linux-arm64|kubectl-cost|' \
+		-czf cmd/kubectl-cost/kubectl-cost-linux-arm64.tar.gz \
+		cmd/kubectl-cost/kubectl-cost-linux-arm64 \
+		LICENSE
+
 .PHONY: windows-amd64
 windows-amd64:
 	cd cmd/kubectl-cost && ${COMMONBUILDARGS} GOOS=windows GOARCH=amd64 govvv build -o kubectl-cost-windows-amd64
@@ -33,10 +41,11 @@ windows-amd64:
 		LICENSE
 
 .PHONY: release
-release: darwin-amd64 darwin-arm64 linux-amd64 windows-amd64
+release: darwin-amd64 darwin-arm64 linux-amd64 linux-arm64 windows-amd64
 	sha256sum cmd/kubectl-cost/kubectl-cost-darwin-amd64.tar.gz
 	sha256sum cmd/kubectl-cost/kubectl-cost-darwin-arm64.tar.gz
 	sha256sum cmd/kubectl-cost/kubectl-cost-linux-amd64.tar.gz
+	sha256sum cmd/kubectl-cost/kubectl-cost-linux-arm64.tar.gz
 	sha256sum cmd/kubectl-cost/kubectl-cost-windows-amd64.tar.gz
 
 .PHONY: build
