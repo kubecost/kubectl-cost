@@ -25,7 +25,7 @@ jobs:
           make release
 
       - name: Release
-        uses: softprops/action-gh-release@v2
+        uses: kubecost/github-actions/action-gh-release@main
         with:
           files: 'cmd/kubectl-cost/kubectl-cost-*'
         env:
