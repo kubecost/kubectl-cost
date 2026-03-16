@@ -38,7 +38,14 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Checkout krew-release-bot
+        uses: actions/checkout@v4
+        with:
+          repository: kubecost/krew-release-bot
+          path: krew-release-bot
+          token: ${{ secrets.ACTIONS_PAT }}
+
       - name: Update version in Krew index
-        uses: kubecost/krew-release-bot@master
+        uses: ./krew-release-bot
         with:
           token: ${{ secrets.ACTIONS_PAT }}
