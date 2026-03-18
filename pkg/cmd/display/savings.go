@@ -3,6 +3,7 @@ package display
 import (
 	"fmt"
 	"io"
+	"sort"
 
 	"github.com/jedib0t/go-pretty/v6/table"
 	"github.com/jedib0t/go-pretty/v6/text"
@@ -64,8 +65,17 @@ func MakeSavingsTable(recs []query.RequestSizingRecommendation, currencyCode str
 		"Savings/mo",
 	})
 
+	// Pre-sort by total monthly savings descending
+	sorted := make([]query.RequestSizingRecommendation, len(recs))
+	copy(sorted, recs)
+	sort.Slice(sorted, func(i, j int) bool {
+		si := sorted[i].MonthlySavings.CPU + sorted[i].MonthlySavings.Memory
+		sj := sorted[j].MonthlySavings.CPU + sorted[j].MonthlySavings.Memory
+		return si > sj
+	})
+
 	totalSavings := 0.0
-	for _, rec := range recs {
+	for _, rec := range sorted {
 		controller := fmt.Sprintf("%s/%s", rec.ControllerKind, rec.ControllerName)
 		monthlySavings := rec.MonthlySavings.CPU + rec.MonthlySavings.Memory
 		totalSavings += monthlySavings
@@ -87,10 +97,6 @@ func MakeSavingsTable(recs []query.RequestSizingRecommendation, currencyCode str
 	t.AppendFooter(table.Row{
 		"TOTAL", "", "", "", "", "", "", "", "",
 		totalSavings,
-	})
-
-	t.SortBy([]table.SortBy{
-		{Name: "Savings/mo", Mode: table.DscNumeric},
 	})
 
 	return t
