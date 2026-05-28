@@ -18,14 +18,14 @@ jobs:
         run: |
           go install github.com/ahmetb/govvv@latest
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Make release
         run: |
           make release
 
       - name: Checkout github-actions
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: kubecost/github-actions
           path: github-actions
@@ -39,7 +39,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Checkout krew-release-bot
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           repository: kubecost/krew-release-bot
           path: krew-release-bot
