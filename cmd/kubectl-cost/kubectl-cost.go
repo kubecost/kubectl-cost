@@ -4,10 +4,13 @@ import (
 	"os"
 
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/klog/v2"
 
 	"github.com/spf13/pflag"
 
 	"github.com/kubecost/kubectl-cost/pkg/cmd"
+
+	goflag "flag"
 )
 
 // The following are set by https://github.com/ahmetb/govvv during
@@ -27,6 +30,8 @@ type assetsQuery struct {
 func main() {
 	flags := pflag.NewFlagSet("kubectl-ns", pflag.ExitOnError)
 	pflag.CommandLine = flags
+	klog.InitFlags(nil)
+	pflag.CommandLine.AddGoFlagSet(goflag.CommandLine)
 
 	root := cmd.NewCmdCost(
 		genericclioptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr},
