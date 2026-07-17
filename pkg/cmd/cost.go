@@ -161,6 +161,7 @@ helm install \
 	cmd.AddCommand(newCmdTUI(streams))
 	cmd.AddCommand(newCmdVersion(streams, GitCommit, GitBranch, GitState, GitSummary, BuildDate))
 	cmd.AddCommand(NewCmdPredict(streams))
+	cmd.AddCommand(newCmdCostSavings(streams))
 
 	return cmd
 }

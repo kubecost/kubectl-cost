@@ -81,5 +81,9 @@ $binary pod \
   --show-cpu \
   -n kube-system
 
+# Show request sizing recommendations and estimated savings
+$binary savings
+$binary savings --window 7d
+
 # use proxy
 $binary namespace --use-proxy

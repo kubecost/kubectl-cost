@@ -18,20 +18,26 @@ jobs:
         run: |
           go install github.com/ahmetb/govvv@latest
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Make release
         run: |
           make release
 
       - name: Release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: 'cmd/kubectl-cost/kubectl-cost-*'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${{ github.ref_name }}" cmd/kubectl-cost/kubectl-cost-*
+
+      - name: Checkout krew-release-bot
+        uses: actions/checkout@v6
+        with:
+          repository: kubecost/krew-release-bot
+          path: krew-release-bot
+          token: ${{ secrets.ACTIONS_PAT }}
 
       - name: Update version in Krew index
-        uses: rajatjindal/krew-release-bot@v0.0.46
-        # see https://github.com/rajatjindal/krew-release-bot
-        # and /.krew.yaml
+        uses: ./krew-release-bot
+        with:
+          token: ${{ secrets.ACTIONS_PAT }}
