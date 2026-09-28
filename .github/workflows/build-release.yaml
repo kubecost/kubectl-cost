@@ -18,7 +18,7 @@ jobs:
         run: |
           go install github.com/ahmetb/govvv@latest
 
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Make release
         run: |
@@ -31,7 +31,7 @@ jobs:
           gh release create "${{ github.ref_name }}" cmd/kubectl-cost/kubectl-cost-*
 
       - name: Checkout krew-release-bot
-        uses: actions/checkout@v6
+        uses: actions/checkout@v7
         with:
           repository: kubecost/krew-release-bot
           path: krew-release-bot
