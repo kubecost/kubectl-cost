@@ -1,5 +1,5 @@
 {
-  "settingsInheritedFrom": "whitesource-config/whitesource-config@master",
+  "settingsInheritedFrom": "ibm-mend-config/mend-config@main",
   "scanSettingsSAST": {
         "enableScan": true
   }
