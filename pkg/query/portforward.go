@@ -8,11 +8,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -25,6 +27,9 @@ type PortForwardQuerier struct {
 	baseQueryURL string
 	stopCh       chan struct{}
 }
+
+// Environment variable to revert to old method of using SPDY instead of WebSockets for K8S port-forwarding
+const KUBECOST_DISABLE_WEBSOCKETS = "KUBECOST_DISABLE_WEBSOCKETS"
 
 func CreatePortForwardForService(restConfig *rest.Config, namespace, serviceName string, servicePort int, ctx context.Context) (*PortForwardQuerier, error) {
 	// First: find a pod to port forward to
@@ -70,17 +75,30 @@ func CreatePortForwardForService(restConfig *rest.Config, namespace, serviceName
 	readyCh := make(chan struct{})
 	stopCh := make(chan struct{}, 1)
 
-	transport, upgrader, err := spdy.RoundTripperFor(restConfig)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create round tripper for rest config: %s", err)
-	}
+	mode := os.Getenv(KUBECOST_DISABLE_WEBSOCKETS)
+	log.Debugf("%s='%s'", KUBECOST_DISABLE_WEBSOCKETS, mode)
 
-	dialer := spdy.NewDialer(
-		upgrader,
-		&http.Client{Transport: transport},
-		http.MethodPost,
-		reqURL,
-	)
+	var dialer httpstream.Dialer
+	if mode != "true" {
+		log.Debugf("%s!=true: Use websocket mode for K8S 1.31+", KUBECOST_DISABLE_WEBSOCKETS)
+		dialer, err = portforward.NewSPDYOverWebsocketDialer(reqURL, restConfig)
+		if err != nil {
+			return nil, fmt.Errorf("websocket connection failure: %s", err)
+		}
+	} else {
+		log.Debugf("%s=true: Use SPDY mode for K8S pre-1.31", KUBECOST_DISABLE_WEBSOCKETS)
+
+		transport, upgrader, err := spdy.RoundTripperFor(restConfig)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create round tripper for rest config: %s", err)
+		}
+		dialer = spdy.NewDialer(
+			upgrader,
+			&http.Client{Transport: transport},
+			http.MethodPost,
+			reqURL,
+		)
+	}
 
 	fw, err := portforward.New(
 		dialer,
