@@ -4,6 +4,9 @@ on:
   pull_request:
     branches:
       - main
+  push:
+    branches:
+      - main
 
 jobs:
   build:
@@ -23,3 +26,20 @@ jobs:
         run: |
           make build
 
+      - name: Test
+        run: |
+          go test -coverprofile=coverage.out ./...
+
+      # name must be coverage-xml for the shared plugin
+      - name: Upload coverage for the shared coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: coverage-xml
+          path: coverage.out
+
+  # only on merge to main
+  coverage:
+    needs: build
+    if: github.event_name == 'push'
+    uses: Apptio-PNE/code-coverage-report/.github/workflows/coverage.yml@main
+    secrets: inherit
