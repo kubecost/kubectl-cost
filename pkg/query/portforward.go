@@ -8,11 +8,13 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"time"
 
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/labels"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -21,9 +23,38 @@ import (
 	"github.com/opencost/opencost/core/pkg/log"
 )
 
+// DisableWebsocketsEnvVar, when set to "true", makes port forwarding use only
+// SPDY, as before Kubernetes 1.31 deprecated it in favour of WebSockets.
+const DisableWebsocketsEnvVar = "KUBECOST_DISABLE_WEBSOCKETS"
+
 type PortForwardQuerier struct {
 	baseQueryURL string
 	stopCh       chan struct{}
+}
+
+// newPortForwardDialer returns the dialer used to reach the pod's portforward
+// subresource. Like kubectl, it first tries SPDY tunneled over WebSockets,
+// which Kubernetes 1.31+ expects, and falls back to plain SPDY when the
+// WebSocket upgrade fails or a proxy does not support it, so older clusters
+// keep working. With disableWebsockets it uses plain SPDY only.
+func newPortForwardDialer(restConfig *rest.Config, reqURL *url.URL, disableWebsockets bool) (httpstream.Dialer, error) {
+	transport, upgrader, err := spdy.RoundTripperFor(restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create round tripper for rest config: %s", err)
+	}
+	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: transport}, http.MethodPost, reqURL)
+	if disableWebsockets {
+		log.Debugf("%s=true: port forwarding over SPDY only", DisableWebsocketsEnvVar)
+		return dialer, nil
+	}
+
+	tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(reqURL, restConfig)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create websocket dialer: %s", err)
+	}
+	return portforward.NewFallbackDialer(tunnelingDialer, dialer, func(err error) bool {
+		return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+	}), nil
 }
 
 func CreatePortForwardForService(restConfig *rest.Config, namespace, serviceName string, servicePort int, ctx context.Context) (*PortForwardQuerier, error) {
@@ -70,17 +101,10 @@ func CreatePortForwardForService(restConfig *rest.Config, namespace, serviceName
 	readyCh := make(chan struct{})
 	stopCh := make(chan struct{}, 1)
 
-	transport, upgrader, err := spdy.RoundTripperFor(restConfig)
+	dialer, err := newPortForwardDialer(restConfig, reqURL, os.Getenv(DisableWebsocketsEnvVar) == "true")
 	if err != nil {
-		return nil, fmt.Errorf("failed to create round tripper for rest config: %s", err)
+		return nil, err
 	}
-
-	dialer := spdy.NewDialer(
-		upgrader,
-		&http.Client{Transport: transport},
-		http.MethodPost,
-		reqURL,
-	)
 
 	fw, err := portforward.New(
 		dialer,
