@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"github.com/opencost/opencost/core/pkg/opencost"
 	"k8s.io/client-go/kubernetes"
@@ -53,7 +54,7 @@ func QueryAssets(p AssetParameters) ([]map[string]AssetNode, error) {
 			return nil, fmt.Errorf("failed to create clientset: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, string(p.ServicePort), "/model/assets", requestParams).DoRaw(p.Ctx)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, strconv.Itoa(p.ServicePort), "/model/assets", requestParams).DoRaw(p.Ctx)
 		if err != nil {
 			return nil, fmt.Errorf("failed to proxy get opencost. err: %s; data: %s", err, bytes)
 		}
