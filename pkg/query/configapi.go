@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
 
 	"k8s.io/client-go/kubernetes"
 )
@@ -30,7 +31,7 @@ func QueryCurrencyCode(p CurrencyCodeParameters) (string, error) {
 			return "", fmt.Errorf("failed to create clientset: %s", err)
 		}
 
-		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, string(p.ServicePort), "/model/getConfigs", nil).DoRaw(p.Ctx)
+		bytes, err = clientset.CoreV1().Services(p.KubecostNamespace).ProxyGet("", p.ServiceName, strconv.Itoa(p.ServicePort), "/model/getConfigs", nil).DoRaw(p.Ctx)
 
 		if err != nil {
 			return "", fmt.Errorf("failed to proxy get kubecost. err: %s; data: %s", err, bytes)
